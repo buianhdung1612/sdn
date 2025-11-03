@@ -1,0 +1,7 @@
+mixin pagination()
+  - const total = pagination?.totalPages || 1
+  .row.mt-3
+    .col-lg-2.col-md-3.col-6
+      select.form-select(pagination)
+        - for(let i = 1; i <= total; i++)
+            option(value=i) Trang #{i}
