@@ -4,31 +4,23 @@ const schema = new mongoose.Schema(
     {
         name: String,
         slug: String,
-        position: Number,
-        category: [String],
-        images: [String],
-        priceOld: Number,
-        priceNew: Number,
-        stock: Number,
-        attributes: Array,
-        variants: Array,
+        parent: String,
         description: String,
-        content: String,
+        avatar: String,
         status: {
             type: String,
-            enum: ["draft", "active", "inactive"],
-            default: "draft"
+            enum: ["active", "inactive"],
+            default: "active"
         },
         view: {
             type: Number,
             default: 0
         },
-        search: String,
-        tags: [String],
         deleted: {
             type: Boolean,
             default: false
         },
+        search: String,
         deletedAt: Date
     },
     {
@@ -36,6 +28,6 @@ const schema = new mongoose.Schema(
     }
 );
 
-const Product = mongoose.model('Product', schema, "products");
+const CategoryBlog = mongoose.model("CategoryBlog", schema, "categories-blog");
 
-export default Product;
+export default CategoryBlog;

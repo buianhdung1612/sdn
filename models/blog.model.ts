@@ -4,19 +4,13 @@ const schema = new mongoose.Schema(
     {
         name: String,
         slug: String,
-        position: Number,
         category: [String],
-        images: [String],
-        priceOld: Number,
-        priceNew: Number,
-        stock: Number,
-        attributes: Array,
-        variants: Array,
+        avatar: String,
         description: String,
         content: String,
         status: {
             type: String,
-            enum: ["draft", "active", "inactive"],
+            enum: ["draft", "published", "archived"], // draft – Bản nháp, published – Đã xuất bản, archived – Đã lưu trữ
             default: "draft"
         },
         view: {
@@ -24,7 +18,7 @@ const schema = new mongoose.Schema(
             default: 0
         },
         search: String,
-        tags: [String],
+        publishAt: Date,
         deleted: {
             type: Boolean,
             default: false
@@ -36,6 +30,6 @@ const schema = new mongoose.Schema(
     }
 );
 
-const Product = mongoose.model('Product', schema, "products");
+const Blog = mongoose.model('Blog', schema, "blogs");
 
-export default Product;
+export default Blog;

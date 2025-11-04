@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import dotenv from "dotenv";
-import routes from "./routes/index.route";
+import adminRoutes from "./routes/admin/index.route";
 import { pathAdmin, domainCDN } from './configs/variable.config';
 import { connectDB } from './configs/database.config';
 import cookieParser = require('cookie-parser');
@@ -52,7 +52,7 @@ app.locals.domainCDN = domainCDN;
 app.use(cookieParser())
 
 // Cấu hình routes
-app.use("/", routes);
+app.use(`/${pathAdmin}`, adminRoutes);
 
 app.listen(port, () => {
     console.log(`Website đang chạy trên cổng ${port}`)
