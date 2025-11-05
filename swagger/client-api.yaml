@@ -977,30 +977,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ForecastResponse'
-        '400': { description: Thiếu hoặc sai stationId }
-        '401': { description: Chưa đăng nhập Admin (cookie không hợp lệ) }
-        '500': { description: Lỗi server }
-              example:
-                success: false
-                message: Token không hợp lệ hoặc không được cung cấp!
-        '403':
-          description: Không có quyền xem sản phẩm này
+        '400':
+          description: Thiếu hoặc sai stationId
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Bạn không có quyền xem sản phẩm này!
-        '404':
-          description: Không tìm thấy sản phẩm
+        '401':
+          description: Chưa đăng nhập Admin (cookie không hợp lệ)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Không tìm thấy sản phẩm!
         '500':
           description: Lỗi server
           content:
