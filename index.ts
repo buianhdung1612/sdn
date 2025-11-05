@@ -54,11 +54,11 @@ app.locals.domainCDN = domainCDN;
 // Khởi tạo thư viện lấy cookie
 app.use(cookieParser())
 
-// Swagger UI - Documentation cho Client API
-const swaggerDocument = YAML.load(path.join(__dirname, 'swagger/client-api.yaml'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+// Swagger UI - Unified Documentation in client-api.yaml (Client + Admin)
+const swaggerUnifiedDoc = YAML.load(path.join(__dirname, 'swagger/client-api.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerUnifiedDoc, {
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: "Client API Documentation"
+    customSiteTitle: "SDN Unified API Documentation"
 }));
 
 // Cấu hình routes
