@@ -18,14 +18,20 @@ tags:
     description: API xác thực cho ứng dụng client
   - name: Products
     description: API quản lý sản phẩm
+  - name: Inventory
+    description: API quản lý tồn kho của đại lý
+  - name: Allocation Request
+    description: API đặt hàng xe từ Hãng
+  - name: Allocation Tracking
+    description: API theo dõi xe được phân bổ
+  - name: Pricing & Promotion
+    description: API giá sỉ, chiết khấu và khuyến mãi
   - name: Stations
     description: API dành cho Nhân viên Trạm sạc (theo dõi & báo cáo sự cố)
   - name: Analytics
     description: Báo cáo doanh thu và tần suất sử dụng (Admin)
   - name: AI
     description: Dự báo nhu cầu và gợi ý nâng cấp hạ tầng (Admin)
-  - name: Stations
-    description: API dành cho Nhân viên Trạm sạc (theo dõi & báo cáo sự cố)
 
 components:
   securitySchemes:
@@ -1120,4 +1126,542 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  # ==================== INVENTORY APIs (Phần 1b) ====================
+  /inventory:
+    get:
+      tags:
+        - Inventory
+      summary: Lấy danh sách tồn kho của đại lý
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: keyword
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
 
+  /inventory/{productId}:
+    get:
+      tags:
+        - Inventory
+      summary: Tồn kho một sản phẩm
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== ALLOCATION REQUEST APIs ====================
+  /allocation-requests:
+    get:
+      tags:
+        - Allocation Request
+      summary: Danh sách yêu cầu đặt hàng
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+    post:
+      tags:
+        - Allocation Request
+      summary: Tạo yêu cầu mới
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+
+  /allocation-requests/{id}:
+    get:
+      tags:
+        - Allocation Request
+      summary: Chi tiết yêu cầu
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+    patch:
+      tags:
+        - Allocation Request
+      summary: Cập nhật yêu cầu (chỉ draft)
+      description: Sửa items, quantity, notes... khi request còn ở trạng thái draft
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: string
+                      variantIndex:
+                        type: integer
+                      quantity:
+                        type: integer
+                      notes:
+                        type: string
+                requestType:
+                  type: string
+                  enum: [normal, urgent]
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                expectedDeliveryDate:
+                  type: string
+                  format: date
+                reason:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '400':
+          description: Chỉ draft mới được update
+        '404':
+          description: Không tìm thấy
+    delete:
+      tags:
+        - Allocation Request
+      summary: Xóa yêu cầu (chỉ draft)
+      description: Xóa vĩnh viễn request khi còn ở trạng thái draft
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Xóa thành công
+        '400':
+          description: Chỉ draft mới được xóa
+        '404':
+          description: Không tìm thấy
+
+  /allocation-requests/{id}/submit:
+    patch:
+      tags:
+        - Allocation Request
+      summary: Gửi yêu cầu
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  /allocation-requests/{id}/cancel:
+    patch:
+      tags:
+        - Allocation Request
+      summary: Hủy yêu cầu
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== ALLOCATION TRACKING APIs ====================
+  /allocations/summary:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Thống kê phân bổ
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /allocations:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Danh sách phân bổ
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /allocations/{id}:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Chi tiết phân bổ
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  /allocations/{id}/vins:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Danh sách VIN
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== PRICING & PROMOTION APIs ====================
+  /pricing:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Giá sỉ
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /pricing/discounts:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Chiết khấu
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /pricing/promotions:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Khuyến mãi
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /pricing/calculate:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Tính giá
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: productId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: variantIndex
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: quantity
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
+  # ==================== INVENTORY APIs (Phần 1b) ====================
+  /inventory:
+    get:
+      tags:
+        - Inventory
+      summary: Lấy danh sách tồn kho của đại lý
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: keyword
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  /inventory/{productId}:
+    get:
+      tags:
+        - Inventory
+      summary: Tồn kho một sản phẩm
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== ALLOCATION REQUEST APIs ====================
+  /allocation-requests:
+    get:
+      tags:
+        - Allocation Request
+      summary: Danh sách yêu cầu đặt hàng
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+    post:
+      tags:
+        - Allocation Request
+      summary: Tạo yêu cầu mới
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+
+  /allocation-requests/{id}:
+    get:
+      tags:
+        - Allocation Request
+      summary: Chi tiết yêu cầu
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  /allocation-requests/{id}/submit:
+    patch:
+      tags:
+        - Allocation Request
+      summary: Gửi yêu cầu
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  /allocation-requests/{id}/cancel:
+    patch:
+      tags:
+        - Allocation Request
+      summary: Hủy yêu cầu
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== ALLOCATION TRACKING APIs ====================
+  /allocations/summary:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Thống kê phân bổ
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /allocations:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Danh sách phân bổ
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /allocations/{id}:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Chi tiết phân bổ
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  /allocations/{id}/vins:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Danh sách VIN
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== PRICING & PROMOTION APIs ====================
+  /pricing:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Giá sỉ
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /pricing/discounts:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Chiết khấu
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /pricing/promotions:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Khuyến mãi
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /pricing/calculate:
+    get:
+      tags:
+        - Pricing & Promotion
+      summary: Tính giá
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: productId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: variantIndex
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: quantity
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thành công
