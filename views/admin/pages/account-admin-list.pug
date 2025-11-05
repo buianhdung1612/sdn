@@ -40,7 +40,7 @@ block main
                     td #{pagination.skip + index + 1}
                     td
                       img(
-                        src=`${domainCDN}${item.avatar}`
+                        src=item.avatar
                         class="rounded thumb-lg me-1 d-inline"
                       )
                     td #{item.fullName}

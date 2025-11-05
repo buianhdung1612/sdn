@@ -2,9 +2,12 @@ import express from 'express';
 import path from 'path';
 import dotenv from "dotenv";
 import adminRoutes from "./routes/admin/index.route";
+import clientRoutes from "./routes/client/index.route";
 import { pathAdmin, domainCDN } from './configs/variable.config';
 import { connectDB } from './configs/database.config';
 import cookieParser = require('cookie-parser');
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 // Load biến môi trường
 dotenv.config();
@@ -51,8 +54,18 @@ app.locals.domainCDN = domainCDN;
 // Khởi tạo thư viện lấy cookie
 app.use(cookieParser())
 
+// Swagger UI - Documentation cho Client API
+const swaggerDocument = YAML.load(path.join(__dirname, 'swagger/client-api.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: "Client API Documentation"
+}));
+
 // Cấu hình routes
 app.use(`/${pathAdmin}`, adminRoutes);
+
+// API routes cho client (React Native)
+app.use('/api/client', clientRoutes);
 
 app.listen(port, () => {
     console.log(`Website đang chạy trên cổng ${port}`)

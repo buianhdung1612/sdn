@@ -1,0 +1,148 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+include ../mixins/checkbox.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+    .card-body.pt-0
+      form(id="productEditForm")
+        .row
+          .col-md-6.col-lg-6.d-none
+            .mb-3
+              label.form-label(for="id") Id *
+              input.form-control(id="id" type="text" name="id" value=productDetail.id)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="name") Tên sản phẩm *
+              input.form-control(id="name" type="text" name="name" value=productDetail.name)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="version") Phiên bản *
+              input.form-control(id="version" type="text" name="version" value=productDetail.version)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="slug") Đường dẫn *
+              .input-group
+                span.btn.btn-outline-info(
+                  btn-generate-slug="Product" 
+                  from="name"
+                  to="slug"
+                  include-version="true"
+                ) Tự động
+                input.form-control(id="slug" type="text" name="slug" value=productDetail.slug)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="position") Vị trí
+              input.form-control(id="position" type="number" name="position" value=productDetail.position)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="status") Trạng thái
+              select.form-select(id="status" name="status")
+                option(
+                  value="draft"
+                  selected=(productDetail.status === "draft")
+                  ) Bản nháp
+                option(
+                  value="active"
+                  selected=(productDetail.status === "active")
+                  ) Hoạt động
+                option(
+                  value="inactive"
+                  selected=(productDetail.status === "inactive")
+                  ) Tạm dừng
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label Danh mục
+              div(class="checkbox-list" checkbox-list="category")
+                +checkbox-list(categoryList, 0, productDetail.category)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="basePrice") Giá niêm yết
+              input.form-control(id="basePrice" type="number" name="basePrice" value=productDetail.basePrice)
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="rangeKm") Quãng đường (km)
+              input.form-control(id="rangeKm" type="number" name="rangeKm" value=productDetail.rangeKm)
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="batteryKWh") Dung lượng pin (kWh)
+              input.form-control(id="batteryKWh" type="number" name="batteryKWh" value=productDetail.batteryKWh)
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="maxPowerHP") Công suất tối đa (HP)
+              input.form-control(id="maxPowerHP" type="number" name="maxPowerHP" value=productDetail.maxPowerHP)
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label Danh sách thuộc tính
+              div(class="checkbox-list" checkbox-list="attributes")
+                +checkbox-list(attributeList, 0, productDetail.attributes)
+              span.btn.btn-outline-info.mt-1(
+                button-render-variant="attributes"
+              ) Tạo biến thể
+              script. 
+                const attributeList = !{JSON.stringify(attributeList)}
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label Danh sách biến thể
+              .table-responsive-sm
+                table.table.mb-0(variant-table)
+                  thead.table-light
+                    tr
+                      th(scope="col") Trạng thái
+                      each name in attributeNameList
+                        th(scope="col") #{name}
+                      th(scope="col") Giá cũ
+                      th(scope="col") Giá mới
+                      th(scope="col") Còn lại
+                  tbody
+                    each item in productDetail.variants
+                      tr
+                        td
+                          .form-check.form-switch.form-switch-success
+                            input.form-check-input(type="checkbox" checked=item.status)
+                          input(class="d-none" attribute-value value=item.attributeValue)
+                        each attr in item.attributeValue
+                          td #{attr.label}
+                        td 
+                          input.form-control(type="number" value=item.priceOld price-old)
+                        td 
+                          input.form-control(type="number" value=item.priceNew price-new)
+                        td 
+                          input.form-control(type="number" value=item.stock stock)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="images") Ảnh sản phẩm
+              // Hidden real file input
+              input(
+                id="images"
+                type="file"
+                name="images"
+                accept="image/*"
+                multiple
+                hidden
+              )
+              .input-group
+                span.btn.btn-outline-info(type="button" id="imagesChooseBtn") Chọn tệp
+                input.form-control(type="text" id="imagesSelectedText" value=(productDetail.images && productDetail.images.length ? productDetail.images.length + ' tệp đã chọn' : 'Không có tệp nào được chọn') readonly)
+              // Preview ảnh đã chọn
+              .mt-2
+                .row.g-2(id="imagesPreview")
+                  if productDetail.images && productDetail.images.length
+                    each imageUrl in productDetail.images
+                      .col-6.col-sm-4.col-md-3.col-lg-2(data-type="existing" data-url=imageUrl)
+                        .position-relative.border.rounded.p-1.h-100.d-flex.align-items-center.justify-content-center.bg-white(style="min-height:110px")
+                          img.img-fluid(alt="image" src=imageUrl style="max-height:100px; object-fit:cover;")
+                          button.btn.btn-sm.btn-danger.position-absolute(type="button" style="top:4px; right:4px;")
+                            i.la.la-trash
+              script.
+                window.productExistingImages = !{JSON.stringify(productDetail.images || [])}
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="content") Nội dung chi tiết
+              textarea(id="content" name="content" textarea-mce) #{productDetail.content}
+        button.btn.btn-primary(type="submit") Cập nhật
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/product/list`) Hủy

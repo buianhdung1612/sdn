@@ -1,0 +1,122 @@
+extends ../layouts/default.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'promotion')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-secondary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/promotion/list`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          form(id="promotionCreateForm")
+            .row
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="promotionName") Tên chương trình khuyến mãi *
+                  input.form-control(id="promotionName" type="text" name="promotionName" required placeholder="VD: Khuyến mãi mùa hè 2024")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="promotionType") Loại khuyến mãi *
+                  select.form-select(id="promotionType" name="promotionType" required)
+                    option(value="") -- Chọn loại --
+                    option(value="buy_x_get_y") Mua X tặng Y
+                    option(value="discount_percentage") Giảm giá phần trăm (%)
+                    option(value="fixed_discount") Giảm giá số tiền cố định (đ)
+                    option(value="free_gift") Tặng quà
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="promotionValue") Giá trị khuyến mãi *
+                  input.form-control(id="promotionValue" type="number" name="promotionValue" required min="0" step="0.01")
+                  small.text-muted Tùy theo loại: % hoặc số tiền
+              .col-md-6.col-lg-6(id="buyXGetYContainer" style="display: none;")
+                .mb-3
+                  label.form-label(for="buyX") Mua (X)
+                  input.form-control(id="buyX" type="number" name="buyX" value="1" min="1")
+              .col-md-6.col-lg-6(id="getYContainer" style="display: none;")
+                .mb-3
+                  label.form-label(for="getY") Tặng (Y)
+                  input.form-control(id="getY" type="number" name="getY" value="1" min="1")
+              .col-md-6.col-lg-6(id="giftProductContainer" style="display: none;")
+                .mb-3
+                  label.form-label(for="giftProductId") Sản phẩm quà tặng
+                  select.form-select(id="giftProductId" name="giftProductId")
+                    option(value="") -- Chọn sản phẩm --
+                    each product in products
+                      option(value=product.id) #{product.name} - #{product.version}
+              .col-md-6.col-lg-6(id="giftDescriptionContainer" style="display: none;")
+                .mb-3
+                  label.form-label(for="giftDescription") Mô tả quà tặng
+                  input.form-control(id="giftDescription" type="text" name="giftDescription" placeholder="VD: Áo thun cao cấp")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="applyTo") Áp dụng cho *
+                  select.form-select(id="applyTo" name="applyTo" required)
+                    option(value="") -- Chọn --
+                    option(value="all_products") Tất cả sản phẩm
+                    option(value="specific_products") Sản phẩm cụ thể
+              .col-md-6.col-lg-6(id="productIdsContainer" style="display: none;")
+                .mb-3
+                  label.form-label(for="productIds") Chọn sản phẩm
+                  select.form-select(id="productIds" name="productIds" multiple)
+                    each product in products
+                      option(value=product.id) #{product.name} - #{product.version}
+                  small.text-muted Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều sản phẩm
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="minQuantity") Số lượng tối thiểu
+                  input.form-control(id="minQuantity" type="number" name="minQuantity" value="1" min="1")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="minAmount") Tổng giá trị đơn hàng tối thiểu (đ)
+                  input.form-control(id="minAmount" type="number" name="minAmount" value="0" min="0")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="startDate") Ngày bắt đầu *
+                  input.form-control(id="startDate" type="date" name="startDate" required)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="endDate") Ngày kết thúc *
+                  input.form-control(id="endDate" type="date" name="endDate" required)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="status") Trạng thái
+                  select.form-select(id="status" name="status")
+                    option(value="active" selected) Hoạt động
+                    option(value="inactive") Tạm dừng
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="notes") Ghi chú
+                  textarea.form-control(id="notes" name="notes" rows="3")
+            
+            button.btn.btn-primary(type="submit") Tạo mới
+            a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/list`) Hủy
+
+  script.
+    document.getElementById('promotionType').addEventListener('change', function() {
+      const promotionType = this.value;
+      const buyXGetYContainer = document.getElementById('buyXGetYContainer');
+      const getYContainer = document.getElementById('getYContainer');
+      const giftProductContainer = document.getElementById('giftProductContainer');
+      const giftDescriptionContainer = document.getElementById('giftDescriptionContainer');
+      
+      buyXGetYContainer.style.display = promotionType === 'buy_x_get_y' ? 'block' : 'none';
+      getYContainer.style.display = promotionType === 'buy_x_get_y' ? 'block' : 'none';
+      giftProductContainer.style.display = promotionType === 'free_gift' ? 'block' : 'none';
+      giftDescriptionContainer.style.display = promotionType === 'free_gift' ? 'block' : 'none';
+    });
+    
+    document.getElementById('applyTo').addEventListener('change', function() {
+      const applyTo = this.value;
+      const productIdsContainer = document.getElementById('productIdsContainer');
+      productIdsContainer.style.display = applyTo === 'specific_products' ? 'block' : 'none';
+    });

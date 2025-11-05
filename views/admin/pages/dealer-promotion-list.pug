@@ -1,0 +1,117 @@
+extends ../layouts/default.pug
+include ../mixins/pagination.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'promotion')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/promotion/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Thêm khuyến mãi
+              a.btn.btn-secondary.ms-2(
+                href=`/${pathAdmin}/dealer/edit/${dealer.id}`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th STT
+                  th Tên chương trình
+                  th Loại
+                  th Giá trị
+                  th Áp dụng cho
+                  th Điều kiện
+                  th Thời gian
+                  th Trạng thái
+                  th Ngày tạo
+                  th.text-end Hành động
+              tbody
+                if promotionList && promotionList.length > 0
+                  each item, index in promotionList
+                    tr
+                      td #{pagination.skip + index + 1}
+                      td
+                        strong #{item.promotionName}
+                      td
+                        if item.promotionType === "buy_x_get_y"
+                          span.badge.bg-info Mua X tặng Y
+                        else if item.promotionType === "discount_percentage"
+                          span.badge.bg-success Giảm giá %
+                        else if item.promotionType === "fixed_discount"
+                          span.badge.bg-primary Giảm giá cố định
+                        else if item.promotionType === "free_gift"
+                          span.badge.bg-warning Tặng quà
+                      td
+                        if item.promotionType === "buy_x_get_y"
+                          | Mua #{item.promotionConfig && item.promotionConfig.buyX ? item.promotionConfig.buyX : 1} tặng #{item.promotionConfig && item.promotionConfig.getY ? item.promotionConfig.getY : 1}
+                        else if item.promotionType === "discount_percentage"
+                          strong.text-success #{item.promotionValue}%
+                        else if item.promotionType === "fixed_discount"
+                          strong.text-success #{item.promotionValue.toLocaleString('vi-VN')} đ
+                        else if item.promotionType === "free_gift"
+                          if item.promotionConfig && item.promotionConfig.giftProductId
+                            | #{item.promotionConfig.giftProductId.name || 'Sản phẩm quà tặng'}
+                          else
+                            | #{item.promotionConfig && item.promotionConfig.giftDescription ? item.promotionConfig.giftDescription : 'Quà tặng'}
+                      td
+                        if item.applyTo === "all_products"
+                          span.badge.bg-primary Tất cả sản phẩm
+                        else if item.applyTo === "specific_products"
+                          if item.productIds && item.productIds.length > 0
+                            | #{item.productIds.length} sản phẩm
+                          else
+                            span.text-muted Chưa chọn
+                      td
+                        if item.conditions && item.conditions.minQuantity > 1
+                          div Số lượng: ≥ #{item.conditions.minQuantity}
+                        if item.conditions && item.conditions.minAmount > 0
+                          div Tổng đơn: ≥ #{item.conditions.minAmount.toLocaleString('vi-VN')} đ
+                        if (!item.conditions || (item.conditions.minQuantity <= 1 && item.conditions.minAmount <= 0))
+                          span.text-muted Không có
+                      td
+                        div #{new Date(item.startDate).toLocaleDateString('vi-VN')}
+                        small.text-muted đến #{new Date(item.endDate).toLocaleDateString('vi-VN')}
+                      td
+                        if item.status === "active"
+                          - const now = new Date()
+                          - const endDate = new Date(item.endDate)
+                          if endDate < now
+                            span.badge.bg-secondary Đã hết hạn
+                          else
+                            span.badge.bg-success Hoạt động
+                        else if item.status === "inactive"
+                          span.badge.bg-secondary Tạm dừng
+                        else if item.status === "expired"
+                          span.badge.bg-danger Hết hạn
+                      td
+                        | #{new Date(item.createdAt).toLocaleDateString('vi-VN')}
+                      td.text-end
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/edit/${item.id}`)
+                          i.las.la-pen.text-secondary.font-16
+                        a(
+                          href="javascript:;"
+                          button-api=`delete-khuyến mãi`
+                          data-method="PATCH"
+                          data-api=`/${pathAdmin}/dealer/${dealer.id}/promotion/delete/${item.id}`
+                        )
+                          i.las.la-trash-alt.text-secondary.font-16
+                else
+                  tr
+                    td(colspan="10" class="text-center")
+                      | Chưa có chương trình khuyến mãi nào. 
+                      a(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/create`) Thêm khuyến mãi
+          +pagination()
+

@@ -1,0 +1,90 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'target-sales')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code}) - Năm: #{targetSales.year}
+            .col-auto
+              a.btn.btn-secondary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/target-sales/list`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          form(id="targetSalesEditForm")
+            .row.d-none
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="id") Id *
+                  input.form-control(id="id" type="text" name="id" value=targetSales.id)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="dealerId") Dealer ID *
+                  input.form-control(id="dealerId" type="text" name="dealerId" value=dealer.id)
+            
+            .row
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="year") Năm
+                  input.form-control(id="year" type="number" name="year" value=targetSales.year readonly)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="yearlyTarget") Chỉ tiêu năm (đ) *
+                  input.form-control(id="yearlyTarget" type="number" name="yearlyTarget" value=(targetSales.yearlyTarget || 0) required)
+            
+            hr
+            
+            h5.mb-3 Chỉ tiêu theo quý
+            .row
+              .col-md-3.col-lg-3
+                .mb-3
+                  label.form-label(for="quarter1") Quý 1 (đ)
+                  - const q1 = targetSales.quarterlyTarget.find(q => q.quarter === 1)
+                  input.form-control(id="quarter1" type="number" name="quarter1" value=(q1 && q1.target ? q1.target : 0))
+              .col-md-3.col-lg-3
+                .mb-3
+                  label.form-label(for="quarter2") Quý 2 (đ)
+                  - const q2 = targetSales.quarterlyTarget.find(q => q.quarter === 2)
+                  input.form-control(id="quarter2" type="number" name="quarter2" value=(q2 && q2.target ? q2.target : 0))
+              .col-md-3.col-lg-3
+                .mb-3
+                  label.form-label(for="quarter3") Quý 3 (đ)
+                  - const q3 = targetSales.quarterlyTarget.find(q => q.quarter === 3)
+                  input.form-control(id="quarter3" type="number" name="quarter3" value=(q3 && q3.target ? q3.target : 0))
+              .col-md-3.col-lg-3
+                .mb-3
+                  label.form-label(for="quarter4") Quý 4 (đ)
+                  - const q4 = targetSales.quarterlyTarget.find(q => q.quarter === 4)
+                  input.form-control(id="quarter4" type="number" name="quarter4" value=(q4 && q4.target ? q4.target : 0))
+            
+            hr
+            
+            h5.mb-3 Số chiếc theo tháng
+            .row
+              - const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
+              each month, index in months
+                .col-md-3.col-lg-3
+                  .mb-3
+                    label.form-label(for=`month${index + 1}`) #{month} (chiếc)
+                    - const monthData = targetSales.monthlyTarget.find(m => m.month === (index + 1))
+                    input.form-control(id=`month${index + 1}` type="number" name=`month${index + 1}` value=(monthData && monthData.target ? monthData.target : 0) min="0")
+            
+            hr
+            
+            .row
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="note") Ghi chú
+                  textarea.form-control(id="note" name="note" rows="3") #{targetSales.note || ''}
+            
+            button.btn.btn-primary(type="submit") Cập nhật
+            a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/${dealer.id}/target-sales/list`) Hủy
+

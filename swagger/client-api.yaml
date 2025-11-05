@@ -1,0 +1,495 @@
+openapi: 3.0.0
+info:
+  title: Client API - React Native
+  description: API cho ứng dụng client (React Native) - Quản lý đại lý và nhân viên bán hàng
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/client
+    description: Development server
+  - url: https://your-domain.com/api/client
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: API xác thực cho ứng dụng client
+  - name: Products
+    description: API quản lý sản phẩm
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token từ API đăng nhập. Format: Bearer {token}
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID của user
+        fullName:
+          type: string
+          description: Họ và tên
+        email:
+          type: string
+          format: email
+          description: Email
+        avatar:
+          type: string
+          nullable: true
+          description: URL avatar
+        role:
+          type: string
+          description: Vai trò (quản lý đại lý hoặc nhân viên bán hàng)
+
+    Dealer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID của đại lý
+        name:
+          type: string
+          description: Tên đại lý
+        code:
+          type: string
+          description: Mã đại lý
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: dealer@example.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Đăng nhập thành công!
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT token để xác thực các request tiếp theo
+            user:
+              $ref: '#/components/schemas/User'
+            dealer:
+              $ref: '#/components/schemas/Dealer'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Email hoặc mật khẩu không chính xác!
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+
+    Variant:
+      type: object
+      properties:
+        attributeValue:
+          type: array
+          items:
+            type: object
+        stock:
+          type: number
+        priceOld:
+          type: number
+        priceNew:
+          type: number
+        status:
+          type: boolean
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        slug:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        basePrice:
+          type: number
+        rangeKm:
+          type: number
+        batteryKWh:
+          type: number
+        maxPowerHP:
+          type: number
+        categories:
+          type: array
+          items:
+            type: string
+        categoryIds:
+          type: array
+          items:
+            type: string
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+        totalStock:
+          type: number
+        status:
+          type: string
+          enum: [draft, active, inactive]
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalRecords:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
+
+    ProductsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Lấy danh sách sản phẩm thành công!
+        data:
+          type: object
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '#/components/schemas/Product'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+
+    ProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            attributes:
+              type: array
+              items:
+                type: object
+            content:
+              type: string
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/Category'
+
+    ProductDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Lấy thông tin sản phẩm thành công!
+        data:
+          type: object
+          properties:
+            product:
+              $ref: '#/components/schemas/ProductDetail'
+
+paths:
+  /account/login:
+    post:
+      summary: Đăng nhập cho quản lý đại lý hoặc nhân viên bán hàng
+      description: |
+        API đăng nhập chỉ cho phép tài khoản có role:
+        - Quản lý đại lý
+        - Nhân viên bán hàng
+        
+        Sau khi đăng nhập thành công, sẽ trả về token để sử dụng cho các API khác.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                success: true
+                message: Đăng nhập thành công!
+                data:
+                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    id: "507f1f77bcf86cd799439011"
+                    fullName: "Nguyễn Văn A"
+                    email: "dealer@example.com"
+                    avatar: "/uploads/avatar.jpg"
+                    role: "Quản lý đại lý"
+                  dealer:
+                    id: "507f1f77bcf86cd799439012"
+                    name: "Đại lý ABC"
+                    code: "DL001"
+        '400':
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Vui lòng nhập email và mật khẩu!
+        '401':
+          description: Email hoặc mật khẩu không chính xác
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Email hoặc mật khẩu không chính xác!
+        '403':
+          description: Không có quyền truy cập
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Bạn không có quyền truy cập ứng dụng này!
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Đã có lỗi xảy ra, vui lòng thử lại sau!
+
+  /product:
+    get:
+      summary: Lấy danh sách sản phẩm của đại lý
+      description: |
+        API lấy danh sách sản phẩm đã được phân bổ cho đại lý.
+        
+        Hỗ trợ:
+        - Tìm kiếm theo keyword (tên sản phẩm, version)
+        - Lọc theo categoryId
+        - Phân trang
+        
+        Chỉ trả về sản phẩm đã được phân bổ cho đại lý trong các allocation với status: pending, allocated, shipped, delivered
+      tags:
+        - Products
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: keyword
+          in: query
+          description: Từ khóa tìm kiếm (tên sản phẩm, version)
+          schema:
+            type: string
+          example: Alpha
+        - name: categoryId
+          in: query
+          description: ID danh mục để lọc sản phẩm
+          schema:
+            type: string
+          example: 507f1f77bcf86cd799439011
+        - name: page
+          in: query
+          description: Số trang (mặc định 1)
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: Số lượng sản phẩm mỗi trang (mặc định 20)
+          schema:
+            type: integer
+            default: 20
+          example: 20
+      responses:
+        '200':
+          description: Lấy danh sách sản phẩm thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsResponse'
+              example:
+                success: true
+                message: Lấy danh sách sản phẩm thành công!
+                data:
+                  products:
+                    - id: "507f1f77bcf86cd799439011"
+                      name: "EVM Alpha"
+                      version: "Long Range Plus"
+                      slug: "evm-alpha-long-range-plus"
+                      images:
+                        - "https://example.com/image1.jpg"
+                      basePrice: 1000000000
+                      rangeKm: 600
+                      batteryKWh: 100
+                      maxPowerHP: 200
+                      categories:
+                        - "SUV"
+                        - "Điện"
+                      categoryIds:
+                        - "507f1f77bcf86cd799439011"
+                      variants: []
+                      totalStock: 50
+                      status: "active"
+                  pagination:
+                    page: 1
+                    limit: 20
+                    totalRecords: 100
+                    totalPages: 5
+        '401':
+          description: Token không hợp lệ hoặc không được cung cấp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Token không hợp lệ hoặc không được cung cấp!
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /product/{id}:
+    get:
+      summary: Lấy chi tiết sản phẩm
+      description: |
+        API lấy thông tin chi tiết của một sản phẩm.
+        
+        Chỉ trả về nếu sản phẩm đã được phân bổ cho đại lý.
+        Bao gồm đầy đủ thông tin: variants, attributes, categories, content.
+      tags:
+        - Products
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID của sản phẩm
+          schema:
+            type: string
+          example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Lấy thông tin sản phẩm thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+              example:
+                success: true
+                message: Lấy thông tin sản phẩm thành công!
+                data:
+                  product:
+                    id: "507f1f77bcf86cd799439011"
+                    name: "EVM Alpha"
+                    version: "Long Range Plus"
+                    slug: "evm-alpha-long-range-plus"
+                    images:
+                      - "https://example.com/image1.jpg"
+                    basePrice: 1000000000
+                    rangeKm: 600
+                    batteryKWh: 100
+                    maxPowerHP: 200
+                    categories:
+                      - id: "507f1f77bcf86cd799439011"
+                        name: "SUV"
+                        slug: "suv"
+                    categoryIds:
+                      - "507f1f77bcf86cd799439011"
+                    attributes: []
+                    variants: []
+                    content: "<p>Mô tả sản phẩm</p>"
+                    status: "active"
+        '401':
+          description: Token không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Token không hợp lệ hoặc không được cung cấp!
+        '403':
+          description: Không có quyền xem sản phẩm này
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Bạn không có quyền xem sản phẩm này!
+        '404':
+          description: Không tìm thấy sản phẩm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Không tìm thấy sản phẩm!
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+

@@ -15,7 +15,6 @@ export const createCategoryPost = (req: Request, res: Response, next: NextFuncti
             }),
         parent: Joi.string().allow(''),
         status: Joi.string().allow(''),
-        avatar: Joi.string().allow(''),
         description: Joi.string().allow(''),
     })
 
@@ -41,6 +40,11 @@ export const createPost = (req: Request, res: Response, next: NextFunction) => {
             .messages({
                 "string.empty": "Vui lòng nhập tên sản phẩm!"
             }),
+        version: Joi.string()
+            .required()
+            .messages({
+                "string.empty": "Vui lòng nhập phiên bản!"
+            }),
         slug: Joi.string()
             .required()
             .messages({
@@ -49,15 +53,17 @@ export const createPost = (req: Request, res: Response, next: NextFunction) => {
         position: Joi.string().allow(''),
         status: Joi.string().allow(''),
         category: Joi.string().allow(''),
-        description: Joi.string().allow(''),
         content: Joi.string().allow(''),
-        images: Joi.string().allow(''),
-        priceOld: Joi.string().allow(''),
-        priceNew: Joi.string().allow(''),
-        stock: Joi.string().allow(''),
+        images: Joi.alternatives().try(
+            Joi.array().items(Joi.string()),
+            Joi.string().allow('')
+        ).optional(),
+        basePrice: Joi.string().allow(''),
+        rangeKm: Joi.string().allow(''),
+        batteryKWh: Joi.string().allow(''),
+        maxPowerHP: Joi.string().allow(''),
         attributes: Joi.string().allow(''),
         variants: Joi.string().allow(''),
-        tags: Joi.string().allow(''),
     });
 
     const { error } = schema.validate(req.body);

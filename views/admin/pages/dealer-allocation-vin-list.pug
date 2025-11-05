@@ -1,0 +1,57 @@
+extends ../layouts/default.pug
+
+block main
+  .row
+    .col-12
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Thêm VIN
+              a.btn.btn-secondary.ms-2(
+                href=`/${pathAdmin}/dealer/allocation/list`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          .alert.alert-info.mb-3
+            strong Điều phối:
+            |  #{allocation.dealerId && allocation.dealerId.name ? allocation.dealerId.name : ''} (#{allocation.dealerId && allocation.dealerId.code ? allocation.dealerId.code : ''})
+            br
+            strong Sản phẩm:
+            |  #{allocation.productId && allocation.productId.name ? allocation.productId.name : ''} #{allocation.productId && allocation.productId.version ? allocation.productId.version : ''}
+            br
+            strong Số lượng:
+            |  #{allocation.quantity} chiếc
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th STT
+                  th Số khung (VIN)
+                  th.text-end Hành động
+              tbody
+                if vinList && vinList.length > 0
+                  each item, index in vinList
+                    tr
+                      td #{index + 1}
+                      td
+                        strong.text-primary #{item.vin}
+                      td.text-end
+                        if allocation.status !== "cancelled"
+                          a(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/edit/${item._id}` title="Chỉnh sửa")
+                            i.las.la-pen.text-secondary.font-16
+                        else
+                          span.text-muted(title="Không thể chỉnh sửa VIN khi điều phối đã hủy") -
+                else
+                  tr
+                    td(colspan="3" class="text-center")
+                      | Chưa có VIN nào.
+                      a(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/create`) Thêm VIN
+

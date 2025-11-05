@@ -1,0 +1,35 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          small.text-muted Điều phối: #{allocation.dealerId && allocation.dealerId.name ? allocation.dealerId.name : ''} (#{allocation.dealerId && allocation.dealerId.code ? allocation.dealerId.code : ''})
+        .col-auto
+          a.btn.btn-secondary(
+            href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/list`
+            )
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      form(id="vinEditForm")
+        .row.d-none
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="id") Id *
+              input.form-control(id="id" type="text" name="id" value=vinDetail._id)
+        .row
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="vin") Số khung (VIN) *
+              input.form-control(id="vin" type="text" name="vin" value=vinDetail.vin required)
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="notes") Ghi chú
+              textarea.form-control(id="notes" name="notes" rows="3") #{vinDetail.notes || ''}
+        button.btn.btn-primary(type="submit") Cập nhật
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/list`) Hủy
+

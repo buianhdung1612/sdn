@@ -1,0 +1,36 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          small.text-muted Điều phối: #{allocation.dealerId && allocation.dealerId.name ? allocation.dealerId.name : ''} (#{allocation.dealerId && allocation.dealerId.code ? allocation.dealerId.code : ''})
+        .col-auto
+          a.btn.btn-secondary(
+            href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/list`
+            )
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      form(id="vinCreateForm")
+        .alert.alert-info.mb-3
+          strong Số lượng điều phối:
+          |  #{allocation.quantity} chiếc
+          br
+          strong Đã thêm:
+          |  #{currentVinCount} VIN
+          br
+          strong Còn lại có thể thêm:
+          |  #{maxVins - currentVinCount} VIN
+        .row
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="vins") Số khung (VIN) *
+              textarea.form-control(id="vins" name="vins" rows="10" placeholder="Nhập số khung (VIN), mỗi dòng một VIN" required)
+              small.text-muted Mỗi dòng là một số khung (VIN). Tối đa #{maxVins - currentVinCount} VIN còn lại.
+        button.btn.btn-primary(type="submit") Thêm VIN
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/list`) Hủy
+

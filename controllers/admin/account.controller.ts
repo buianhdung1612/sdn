@@ -3,7 +3,6 @@ import AccountAdmin from '../../models/account-admin.model';
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { pathAdmin } from '../../configs/variable.config';
-import { logAdminAction } from '../../helpers/log.helper';
 import { RequestAccount } from '../../interfaces/request.interface';
 
 export const login = async (req: Request, res: Response) => {
@@ -99,8 +98,6 @@ export const loginPost = async (req: RequestAccount, res: Response) => {
         maxAge: rememberPassword == "true" ? (7 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000) // 7 ngày hoặc 1 ngày
     });
 
-    logAdminAction(req, "Đã đăng nhập");
-
     res.json({
         code: "success",
         message: "Đăng nhập thành công!"
@@ -108,7 +105,6 @@ export const loginPost = async (req: RequestAccount, res: Response) => {
 }
 
 export const logout = async (req: Request, res: Response) => {
-    logAdminAction(req, "Đã đăng xuất");
     res.clearCookie("tokenAdmin");
     res.redirect(`/${pathAdmin}/account/login`)
 }

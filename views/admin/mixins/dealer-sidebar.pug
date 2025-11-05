@@ -1,0 +1,20 @@
+mixin dealer-sidebar(dealer, activeItem)
+  .col-md-3.col-lg-2
+    .card
+      .card-header
+        h6.mb-0 #{dealer.name}
+      .card-body.p-0
+        nav.nav.flex-column
+          - const menuItems = [
+          -   { url: `/${pathAdmin}/dealer/edit/${dealer.id}`, icon: 'las.la-info-circle', label: 'Thông tin đại lý', key: 'info' },
+          -   { url: `/${pathAdmin}/dealer/${dealer.id}/target-sales/list`, icon: 'las.la-chart-line', label: 'Chỉ tiêu doanh số', key: 'target-sales' },
+          -   { url: `/${pathAdmin}/dealer/${dealer.id}/pricing/list`, icon: 'las.la-dollar-sign', label: 'Giá sỉ', key: 'pricing' },
+          -   { url: `/${pathAdmin}/dealer/${dealer.id}/discount/list`, icon: 'las.la-percent', label: 'Chiết khấu', key: 'discount' },
+          -   { url: `/${pathAdmin}/dealer/${dealer.id}/promotion/list`, icon: 'las.la-gift', label: 'Khuyến mãi', key: 'promotion' },
+          -   { url: `/${pathAdmin}/dealer/allocation/list?dealerId=${dealer.id}`, icon: 'las.la-truck', label: 'Điều phối xe', key: 'allocation' }
+          - ]
+          each item in menuItems
+            - const isActive = activeItem === item.key
+            a.nav-link(class=(isActive ? 'active' : '') href=item.url)
+              i(class=`${item.icon} me-2`)
+              | #{item.label}

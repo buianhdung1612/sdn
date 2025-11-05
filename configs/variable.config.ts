@@ -87,7 +87,38 @@ export const permissionList = [
         id: "account-admin-delete",
         name: "Xóa tài khoản quản trị"
     },
-
+    {
+        id: "dealer-list",
+        name: "Danh sách đại lý"
+    },
+    {
+        id: "dealer-create",
+        name: "Tạo đại lý"
+    },
+    {
+        id: "dealer-edit",
+        name: "Sửa đại lý"
+    },
+    {
+        id: "dealer-delete",
+        name: "Xóa đại lý"
+    },
+    {
+        id: "dealer-allocation-list",
+        name: "Danh sách điều phối xe"
+    },
+    {
+        id: "dealer-allocation-create",
+        name: "Tạo điều phối xe"
+    },
+    {
+        id: "dealer-allocation-edit",
+        name: "Sửa điều phối xe"
+    },
+    {
+        id: "dealer-allocation-delete",
+        name: "Xóa điều phối xe"
+    },
     {
         id: "file-manager",
         name: "Quản lý file"

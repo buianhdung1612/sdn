@@ -3,28 +3,24 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema(
     {
         name: String,
+        version: String,
         slug: String,
         position: Number,
         category: [String],
         images: [String],
-        priceOld: Number,
-        priceNew: Number,
-        stock: Number,
+        basePrice: Number,
+        rangeKm: Number,
+        batteryKWh: Number,
+        maxPowerHP: Number,
         attributes: Array,
         variants: Array,
-        description: String,
         content: String,
         status: {
             type: String,
             enum: ["draft", "active", "inactive"],
             default: "draft"
         },
-        view: {
-            type: Number,
-            default: 0
-        },
         search: String,
-        tags: [String],
         deleted: {
             type: Boolean,
             default: false

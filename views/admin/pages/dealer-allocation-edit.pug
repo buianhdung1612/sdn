@@ -1,0 +1,71 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+        .col-auto
+          a.btn.btn-secondary(
+            href=`/${pathAdmin}/dealer/allocation/list`
+            )
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      form(id="allocationEditForm")
+        .row.d-none
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="id") Id *
+              input.form-control(id="id" type="text" name="id" value=allocation.id)
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label Đại lý
+              input.form-control(value=(allocation.dealerId && allocation.dealerId.name ? allocation.dealerId.name + ' (' + allocation.dealerId.code + ')' : '-') readonly)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label Sản phẩm
+              input.form-control(value=(allocation.productId && allocation.productId.name ? allocation.productId.name + ' ' + allocation.productId.version : '-') readonly)
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label Biến thể
+              if variantInfo && variantInfo.attributeValue
+                each attr in variantInfo.attributeValue
+                  span.badge.bg-info.me-1 #{attr.label}
+              else
+                | -
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="quantity") Số lượng (chiếc) *
+              input.form-control(id="quantity" type="number" name="quantity" value=allocation.quantity min="1" required)
+              small.text-muted#stockInfo
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="status") Trạng thái *
+              select.form-select(id="status" name="status" required)
+                option(value="pending" selected=(allocation.status === "pending")) Chờ phân bổ
+                option(value="allocated" selected=(allocation.status === "allocated")) Đã phân bổ
+                option(value="shipped" selected=(allocation.status === "shipped")) Đã giao hàng
+                option(value="delivered" selected=(allocation.status === "delivered")) Đã nhận
+                option(value="cancelled" selected=(allocation.status === "cancelled")) Đã hủy
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label Số lượng đã nhận
+              input.form-control(value=(allocation.allocatedQuantity || 0) readonly)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label Tồn kho hiện tại
+              if variantInfo
+                input.form-control(value=(variantInfo.stock || 0) readonly)
+              else
+                input.form-control(value="0" readonly)
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="notes") Ghi chú
+              textarea.form-control(id="notes" name="notes" rows="3") #{allocation.notes || ''}
+        button.btn.btn-primary(type="submit") Cập nhật
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/allocation/list`) Hủy
+

@@ -41,14 +41,6 @@ block main
               select.form-select(id="status" name="status")
                 option(value="active" selected=(categoryDetail.status === "active" ? true : false)) Hoạt động
                 option(value="inactive" selected=(categoryDetail.status === "inactive" ? true : false)) Tạm dừng
-          .col-md-6.col-lg-6
-            .mb-3
-              +form-group-file(
-                "Ảnh đại diện", 
-                "avatar", 
-                "avatar", 
-                categoryDetail.avatar
-              )
           .col-md-12.col-lg-12
             .mb-3
               label.form-label(for="description") Mô tả

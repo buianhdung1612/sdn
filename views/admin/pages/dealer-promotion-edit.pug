@@ -1,0 +1,132 @@
+extends ../layouts/default.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'promotion')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-secondary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/promotion/list`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          form(id="promotionEditForm")
+            input(type="hidden" id="id" name="id" value=promotion.id)
+            .row
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="promotionName") Tên chương trình khuyến mãi *
+                  input.form-control(id="promotionName" type="text" name="promotionName" value=promotion.promotionName required placeholder="VD: Khuyến mãi mùa hè 2024")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="promotionType") Loại khuyến mãi *
+                  select.form-select(id="promotionType" name="promotionType" required)
+                    option(value="") -- Chọn loại --
+                    option(value="buy_x_get_y" selected=(promotion.promotionType === "buy_x_get_y")) Mua X tặng Y
+                    option(value="discount_percentage" selected=(promotion.promotionType === "discount_percentage")) Giảm giá phần trăm (%)
+                    option(value="fixed_discount" selected=(promotion.promotionType === "fixed_discount")) Giảm giá số tiền cố định (đ)
+                    option(value="free_gift" selected=(promotion.promotionType === "free_gift")) Tặng quà
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="promotionValue") Giá trị khuyến mãi *
+                  input.form-control(id="promotionValue" type="number" name="promotionValue" value=promotion.promotionValue required min="0" step="0.01")
+                  small.text-muted Tùy theo loại: % hoặc số tiền
+              .col-md-6.col-lg-6(id="buyXGetYContainer" style=(promotion.promotionType === "buy_x_get_y" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="buyX") Mua (X)
+                  - const buyX = promotion.promotionConfig && promotion.promotionConfig.buyX ? promotion.promotionConfig.buyX : 1
+                  input.form-control(id="buyX" type="number" name="buyX" value=buyX min="1")
+              .col-md-6.col-lg-6(id="getYContainer" style=(promotion.promotionType === "buy_x_get_y" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="getY") Tặng (Y)
+                  - const getY = promotion.promotionConfig && promotion.promotionConfig.getY ? promotion.promotionConfig.getY : 1
+                  input.form-control(id="getY" type="number" name="getY" value=getY min="1")
+              .col-md-6.col-lg-6(id="giftProductContainer" style=(promotion.promotionType === "free_gift" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="giftProductId") Sản phẩm quà tặng
+                  select.form-select(id="giftProductId" name="giftProductId")
+                    option(value="") -- Chọn sản phẩm --
+                    each product in products
+                      - const isSelected = promotion.promotionConfig && promotion.promotionConfig.giftProductId && promotion.promotionConfig.giftProductId.toString() === product.id.toString()
+                      option(value=product.id selected=isSelected) #{product.name} - #{product.version}
+              .col-md-6.col-lg-6(id="giftDescriptionContainer" style=(promotion.promotionType === "free_gift" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="giftDescription") Mô tả quà tặng
+                  - const giftDescription = promotion.promotionConfig && promotion.promotionConfig.giftDescription ? promotion.promotionConfig.giftDescription : ''
+                  input.form-control(id="giftDescription" type="text" name="giftDescription" value=giftDescription placeholder="VD: Áo thun cao cấp")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="applyTo") Áp dụng cho *
+                  select.form-select(id="applyTo" name="applyTo" required)
+                    option(value="") -- Chọn --
+                    option(value="all_products" selected=(promotion.applyTo === "all_products")) Tất cả sản phẩm
+                    option(value="specific_products" selected=(promotion.applyTo === "specific_products")) Sản phẩm cụ thể
+              .col-md-6.col-lg-6(id="productIdsContainer" style=(promotion.applyTo === "specific_products" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="productIds") Chọn sản phẩm
+                  select.form-select(id="productIds" name="productIds" multiple)
+                    each product in products
+                      - const isSelected = promotion.productIds && promotion.productIds.some(id => id.toString() === product.id.toString())
+                      option(value=product.id selected=isSelected) #{product.name} - #{product.version}
+                  small.text-muted Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều sản phẩm
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="minQuantity") Số lượng tối thiểu
+                  - const minQuantity = promotion.conditions && promotion.conditions.minQuantity ? promotion.conditions.minQuantity : 1
+                  input.form-control(id="minQuantity" type="number" name="minQuantity" value=minQuantity min="1")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="minAmount") Tổng giá trị đơn hàng tối thiểu (đ)
+                  - const minAmount = promotion.conditions && promotion.conditions.minAmount ? promotion.conditions.minAmount : 0
+                  input.form-control(id="minAmount" type="number" name="minAmount" value=minAmount min="0")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="startDate") Ngày bắt đầu *
+                  - const startDate = promotion.startDate ? new Date(promotion.startDate).toISOString().split('T')[0] : ''
+                  input.form-control(id="startDate" type="date" name="startDate" value=startDate required)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="endDate") Ngày kết thúc *
+                  - const endDate = promotion.endDate ? new Date(promotion.endDate).toISOString().split('T')[0] : ''
+                  input.form-control(id="endDate" type="date" name="endDate" value=endDate required)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="status") Trạng thái
+                  select.form-select(id="status" name="status")
+                    option(value="active" selected=(promotion.status === "active")) Hoạt động
+                    option(value="inactive" selected=(promotion.status === "inactive")) Tạm dừng
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="notes") Ghi chú
+                  textarea.form-control(id="notes" name="notes" rows="3") #{promotion.notes || ''}
+            
+            button.btn.btn-primary(type="submit") Cập nhật
+            a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/list`) Hủy
+
+  script.
+    document.getElementById('promotionType').addEventListener('change', function() {
+      const promotionType = this.value;
+      const buyXGetYContainer = document.getElementById('buyXGetYContainer');
+      const getYContainer = document.getElementById('getYContainer');
+      const giftProductContainer = document.getElementById('giftProductContainer');
+      const giftDescriptionContainer = document.getElementById('giftDescriptionContainer');
+      
+      buyXGetYContainer.style.display = promotionType === 'buy_x_get_y' ? 'block' : 'none';
+      getYContainer.style.display = promotionType === 'buy_x_get_y' ? 'block' : 'none';
+      giftProductContainer.style.display = promotionType === 'free_gift' ? 'block' : 'none';
+      giftDescriptionContainer.style.display = promotionType === 'free_gift' ? 'block' : 'none';
+    });
+    
+    document.getElementById('applyTo').addEventListener('change', function() {
+      const applyTo = this.value;
+      const productIdsContainer = document.getElementById('productIdsContainer');
+      productIdsContainer.style.display = applyTo === 'specific_products' ? 'block' : 'none';
+    });

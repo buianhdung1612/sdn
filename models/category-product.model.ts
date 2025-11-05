@@ -6,15 +6,10 @@ const schema = new mongoose.Schema(
         slug: String,
         parent: String,
         description: String,
-        avatar: String,
         status: {
             type: String,
             enum: ["active", "inactive"],
             default: "active"
-        },
-        view: {
-            type: Number,
-            default: 0
         },
         deleted: {
             type: Boolean,

@@ -1,0 +1,50 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+        .col-auto
+          a.btn.btn-secondary(
+            href=`/${pathAdmin}/dealer/allocation/list`
+            )
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      form(id="allocationCreateForm")
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="dealerId") Đại lý *
+              select.form-select(id="dealerId" name="dealerId" required)
+                option(value="") -- Chọn đại lý --
+                each dealer in dealers
+                  option(value=dealer.id) #{dealer.name} (#{dealer.code})
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="productId") Sản phẩm *
+              select.form-select(id="productId" name="productId" required)
+                option(value="") -- Chọn sản phẩm --
+                each product in products
+                  option(value=product.id) #{product.name} #{product.version}
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="variantIndex") Biến thể *
+              select.form-select(id="variantIndex" name="variantIndex" required disabled)
+                option(value="") -- Chọn sản phẩm trước --
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="quantity") Số lượng (chiếc) *
+              input.form-control(id="quantity" type="number" name="quantity" min="1" required)
+              small.text-muted#stockInfo
+              small.text-warning.d-block#allocatedInfo(style="display:none;")
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="notes") Ghi chú
+              textarea.form-control(id="notes" name="notes" rows="3")
+        button.btn.btn-primary(type="submit") Tạo mới
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/allocation/list`) Hủy
+

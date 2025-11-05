@@ -1,0 +1,92 @@
+extends ../layouts/default.pug
+include ../mixins/pagination.pug
+include ../mixins/form-search.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'target-sales')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/target-sales/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Tạo chỉ tiêu mới
+              a.btn.btn-secondary.ms-2(
+                href=`/${pathAdmin}/dealer/edit/${dealer.id}`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th Năm
+                  th Chỉ tiêu năm (đ)
+                  th Chỉ tiêu Q1 (đ)
+                  th Chỉ tiêu Q2 (đ)
+                  th Chỉ tiêu Q3 (đ)
+                  th Chỉ tiêu Q4 (đ)
+                  th Tổng số chiếc
+                  th Trạng thái
+                  th Ngày tạo
+                  th.text-end Hành động
+              tbody
+                if targetSalesList && targetSalesList.length > 0
+                  each item in targetSalesList
+                    tr
+                      td
+                        strong #{item.year}
+                      td
+                        if item.yearlyTarget
+                          | #{item.yearlyTarget.toLocaleString('vi-VN')} đ
+                        else
+                          | 0 đ
+                      td
+                        - const q1 = item.quarterlyTarget.find(q => q.quarter === 1)
+                        | #{q1 && q1.target ? q1.target.toLocaleString('vi-VN') : '0'} đ
+                      td
+                        - const q2 = item.quarterlyTarget.find(q => q.quarter === 2)
+                        | #{q2 && q2.target ? q2.target.toLocaleString('vi-VN') : '0'} đ
+                      td
+                        - const q3 = item.quarterlyTarget.find(q => q.quarter === 3)
+                        | #{q3 && q3.target ? q3.target.toLocaleString('vi-VN') : '0'} đ
+                      td
+                        - const q4 = item.quarterlyTarget.find(q => q.quarter === 4)
+                        | #{q4 && q4.target ? q4.target.toLocaleString('vi-VN') : '0'} đ
+                      td
+                        - let totalVehicles = 0
+                        - if (item.monthlyTarget && item.monthlyTarget.length > 0)
+                          - totalVehicles = item.monthlyTarget.reduce((sum, m) => sum + (m.target || 0), 0)
+                        | #{totalVehicles.toLocaleString('vi-VN')} chiếc
+                      td
+                        if (item.status === "active")
+                          span.badge.bg-success Hoạt động
+                        else if (item.status === "archived")
+                          span.badge.bg-secondary Đã lưu trữ
+                      td
+                        | #{new Date(item.createdAt).toLocaleDateString('vi-VN')}
+                      td.text-end
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/target-sales/edit/${item.id}`)
+                          i.las.la-pen.text-secondary.font-16
+                        a(
+                          href="javascript:;"
+                          button-api=`delete-chỉ tiêu`
+                          data-method="PATCH"
+                          data-api=`/${pathAdmin}/dealer/${dealer.id}/target-sales/delete/${item.id}`
+                        )
+                          i.las.la-trash-alt.text-secondary.font-16
+                else
+                  tr
+                    td(colspan="10" class="text-center")
+                      | Chưa có chỉ tiêu nào. 
+                      a(href=`/${pathAdmin}/dealer/${dealer.id}/target-sales/create`) Tạo chỉ tiêu mới
+

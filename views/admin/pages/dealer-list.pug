@@ -1,0 +1,89 @@
+extends ../layouts/default.pug
+include ../mixins/pagination.pug
+include ../mixins/form-search.pug
+
+block main
+  - const modelName = "đại lý";
+  - const headers = ["STT", "Mã đại lý", "Tên đại lý", "Địa chỉ", "Số điện thoại", "Email", "Tài khoản", "Công nợ", "Trạng thái", "Hành động"]
+
+  .row
+    .col-12
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+            // end col
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/dealer/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Tạo đại lý
+                // end col
+            // end col
+          // end row
+        // end card-header
+        .card-body.pt-0
+          .row
+            .col-lg-6
+              +form-search()
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  each head in headers
+                    th #{head}
+              tbody
+                each item, index in recordList
+                  tr
+                    td #{pagination.skip + index + 1}
+                    td 
+                      strong.text-primary #{item.code}
+                    td #{item.name}
+                    td(style="max-width: 200px;") #{item.address || '-'}
+                    td #{item.phone || '-'}
+                    td #{item.email || '-'}
+                    td
+                      if item.accountInfo
+                        div
+                          div #{item.accountInfo.fullName}
+                          small.text-muted #{item.accountInfo.email}
+                      else
+                        span.text-muted Chưa gán
+                    td
+                      if item.debt
+                        div
+                          div.text-danger 
+                            strong #{item.debt.currentDebt ? item.debt.currentDebt.toLocaleString('vi-VN') : '0'} đ
+                          small.text-muted Hạn mức: #{item.debt.creditLimit ? item.debt.creditLimit.toLocaleString('vi-VN') : '0'} đ
+                      else
+                        | -
+                    td
+                      if (item.status === "active")
+                        span.badge.bg-success Hoạt động
+                      else if (item.status === "inactive")
+                        span.badge.bg-danger Tạm dừng
+                    td.text-end
+                      a(href=`/${pathAdmin}/dealer/edit/${item.id}` title="Chỉnh sửa")
+                        i.las.la-pen.text-secondary.font-16
+                      a(href=`/${pathAdmin}/dealer/${item.id}/target-sales/list` title="Quản lý chỉ tiêu" style="margin-left: 8px;")
+                        i.las.la-chart-line.text-info.font-16
+                      a(href=`/${pathAdmin}/dealer/${item.id}/pricing/list` title="Quản lý giá sỉ" style="margin-left: 8px;")
+                        i.las.la-dollar-sign.text-success.font-16
+                      a(href=`/${pathAdmin}/dealer/${item.id}/discount/list` title="Quản lý chiết khấu" style="margin-left: 8px;")
+                        i.las.la-percent.text-warning.font-16
+                      a(href=`/${pathAdmin}/dealer/${item.id}/promotion/list` title="Quản lý khuyến mãi" style="margin-left: 8px;")
+                        i.las.la-gift.text-danger.font-16
+                      a(
+                        href="javascript:;"
+                        button-api=`delete-${modelName}`
+                        data-method="PATCH"
+                        data-api=`/${pathAdmin}/dealer/delete/${item.id}`
+                        title="Xóa"
+                        style="margin-left: 8px;"
+                      )
+                        i.las.la-trash-alt.text-secondary.font-16
+          +pagination()
+    // end col
+

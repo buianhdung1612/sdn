@@ -125,13 +125,31 @@
                         li.nav-item
                           a.nav-link(href=`/${pathAdmin}/account-admin/list`) Danh sách tài khoản
                         // end nav-item
-              if (permissions.includes("file-manager")) 
+              if (permissions.some(p => p.includes("dealer")))
                 li.nav-item
                   a.nav-link(
-                    href=`/${pathAdmin}/file-manager/iframe`
+                    aria-controls="sidebarDealer" 
+                    aria-expanded="false" 
+                    role="button" 
+                    data-bs-toggle="collapse" 
+                    href="#sidebarDealer"
                     )
-                    i.iconoir-page-star.menu-icon
-                    span Quản lý file
+                    i.iconoir-cylinder.menu-icon
+                    span Quản lý đại lý
+                  #sidebarDealer.collapse
+                    ul.nav.flex-column
+                      if (permissions.includes("dealer-create"))
+                        li.nav-item
+                          a.nav-link(href=`/${pathAdmin}/dealer/create`) Tạo đại lý
+                        // end nav-item
+                      if (permissions.includes("dealer-list"))
+                        li.nav-item
+                          a.nav-link(href=`/${pathAdmin}/dealer/list`) Danh sách đại lý
+                        // end nav-item
+                      if (permissions.includes("dealer-list"))
+                        li.nav-item
+                          a.nav-link(href=`/${pathAdmin}/dealer/allocation/list`) Điều phối xe
+                        // end nav-item
         // end startbar-collapse
     // end startbar-menu
 // end startbar

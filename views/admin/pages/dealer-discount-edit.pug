@@ -1,0 +1,103 @@
+extends ../layouts/default.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'discount')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-secondary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/discount/list`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          form(id="discountEditForm")
+            input(type="hidden" id="id" name="id" value=discount.id)
+            .row
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="discountName") Tên chính sách chiết khấu
+                  input.form-control(id="discountName" type="text" name="discountName" value=discount.discountName || '' placeholder="VD: Chiết khấu 10% cho đơn hàng lớn")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="discountType") Loại chiết khấu *
+                  select.form-select(id="discountType" name="discountType" required)
+                    option(value="") -- Chọn loại --
+                    option(value="percentage" selected=(discount.discountType === "percentage")) Phần trăm (%)
+                    option(value="fixed_amount" selected=(discount.discountType === "fixed_amount")) Số tiền cố định (đ)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="discountValue") Giá trị chiết khấu *
+                  input.form-control(id="discountValue" type="number" name="discountValue" value=discount.discountValue required min="0" step="0.01")
+                  small.text-muted Nhập % nếu là phần trăm, hoặc số tiền nếu là số tiền cố định
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="applyTo") Áp dụng cho *
+                  select.form-select(id="applyTo" name="applyTo" required)
+                    option(value="") -- Chọn --
+                    option(value="all_products" selected=(discount.applyTo === "all_products")) Tất cả sản phẩm
+                    option(value="specific_products" selected=(discount.applyTo === "specific_products")) Sản phẩm cụ thể
+                    option(value="product_category" selected=(discount.applyTo === "product_category")) Danh mục sản phẩm
+              .col-md-6.col-lg-6(id="productIdsContainer" style=(discount.applyTo === "specific_products" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="productIds") Chọn sản phẩm
+                  select.form-select(id="productIds" name="productIds" multiple)
+                    each product in products
+                      - const isSelected = discount.productIds && discount.productIds.some(id => id.toString() === product.id.toString())
+                      option(value=product.id selected=isSelected) #{product.name} - #{product.version}
+                  small.text-muted Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều sản phẩm
+              .col-md-6.col-lg-6(id="categoryIdsContainer" style=(discount.applyTo === "product_category" ? "display: block;" : "display: none;"))
+                .mb-3
+                  label.form-label(for="categoryIds") Nhập danh mục (phân cách bằng dấu phẩy)
+                  - const categoryIdsValue = discount.categoryIds && discount.categoryIds.length > 0 ? discount.categoryIds.join(', ') : ''
+                  input.form-control(id="categoryIds" type="text" name="categoryIds" value=categoryIdsValue placeholder="VD: sedan, suv")
+                  small.text-muted Nhập các danh mục, phân cách bằng dấu phẩy
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="minQuantity") Số lượng tối thiểu
+                  input.form-control(id="minQuantity" type="number" name="minQuantity" value=discount.minQuantity || 1 min="1")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="minAmount") Tổng giá trị đơn hàng tối thiểu (đ)
+                  input.form-control(id="minAmount" type="number" name="minAmount" value=discount.minAmount || 0 min="0")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="effectiveDate") Ngày hiệu lực *
+                  - const effectiveDate = discount.effectiveDate ? new Date(discount.effectiveDate).toISOString().split('T')[0] : ''
+                  input.form-control(id="effectiveDate" type="date" name="effectiveDate" value=effectiveDate required)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="expiryDate") Ngày hết hạn
+                  - const expiryDate = discount.expiryDate ? new Date(discount.expiryDate).toISOString().split('T')[0] : ''
+                  input.form-control(id="expiryDate" type="date" name="expiryDate" value=expiryDate)
+                  small.text-muted Để trống nếu không có hạn
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="status") Trạng thái
+                  select.form-select(id="status" name="status")
+                    option(value="active" selected=(discount.status === "active")) Hoạt động
+                    option(value="inactive" selected=(discount.status === "inactive")) Tạm dừng
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="notes") Ghi chú
+                  textarea.form-control(id="notes" name="notes" rows="3") #{discount.notes || ''}
+            
+            button.btn.btn-primary(type="submit") Cập nhật
+            a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/${dealer.id}/discount/list`) Hủy
+
+  script.
+    document.getElementById('applyTo').addEventListener('change', function() {
+      const applyTo = this.value;
+      const productIdsContainer = document.getElementById('productIdsContainer');
+      const categoryIdsContainer = document.getElementById('categoryIdsContainer');
+      
+      productIdsContainer.style.display = applyTo === 'specific_products' ? 'block' : 'none';
+      categoryIdsContainer.style.display = applyTo === 'product_category' ? 'block' : 'none';
+    });

@@ -1,0 +1,97 @@
+extends ../layouts/default.pug
+include ../mixins/pagination.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'pricing')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/pricing/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Thêm giá sỉ
+              a.btn.btn-secondary.ms-2(
+                href=`/${pathAdmin}/dealer/edit/${dealer.id}`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th STT
+                  th Sản phẩm
+                  th Biến thể
+                  th Giá gốc (đ)
+                  th Giá sỉ (đ)
+                  th Ngày hiệu lực
+                  th Ngày hết hạn
+                  th Trạng thái
+                  th Ngày tạo
+                  th.text-end Hành động
+              tbody
+                if pricingList && pricingList.length > 0
+                  each item, index in pricingList
+                    tr
+                      td #{pagination.skip + index + 1}
+                      td
+                        if item.productId
+                          div
+                            strong #{item.productId.name}
+                            br
+                            small.text-muted #{item.productId.version}
+                      td
+                        if item.variantIndex !== null && item.variantIndex !== undefined
+                          - const variant = item.productId && item.productId.variants && item.productId.variants[item.variantIndex]
+                          if variant
+                            | #{variant.attributeValue ? variant.attributeValue.join(', ') : 'N/A'}
+                          else
+                            | N/A
+                        else
+                          span.text-muted Tất cả biến thể
+                      td
+                        if item.productId
+                          | #{item.productId.basePrice ? item.productId.basePrice.toLocaleString('vi-VN') : '0'} đ
+                      td
+                        strong.text-success #{item.wholesalePrice.toLocaleString('vi-VN')} đ
+                      td
+                        | #{new Date(item.effectiveDate).toLocaleDateString('vi-VN')}
+                      td
+                        if item.expiryDate
+                          | #{new Date(item.expiryDate).toLocaleDateString('vi-VN')}
+                        else
+                          span.text-muted Không giới hạn
+                      td
+                        if (item.status === "active")
+                          span.badge.bg-success Hoạt động
+                        else
+                          span.badge.bg-secondary Tạm dừng
+                      td
+                        | #{new Date(item.createdAt).toLocaleDateString('vi-VN')}
+                      td.text-end
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/edit/${item.id}`)
+                          i.las.la-pen.text-secondary.font-16
+                        a(
+                          href="javascript:;"
+                          button-api=`delete-giá sỉ`
+                          data-method="PATCH"
+                          data-api=`/${pathAdmin}/dealer/${dealer.id}/pricing/delete/${item.id}`
+                        )
+                          i.las.la-trash-alt.text-secondary.font-16
+                else
+                  tr
+                    td(colspan="10" class="text-center")
+                      | Chưa có giá sỉ nào. 
+                      a(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/create`) Thêm giá sỉ
+          +pagination()
+
+

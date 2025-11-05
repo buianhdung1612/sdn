@@ -1,0 +1,82 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+    .card-body.pt-0
+      form(id="dealerCreateForm")
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="name") Tên đại lý *
+              input.form-control(id="name" type="text" name="name")
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="code") Mã đại lý *
+              input.form-control(id="code" type="text" name="code" placeholder="VD: DL001")
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="address") Địa chỉ
+              input.form-control(id="address" type="text" name="address")
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="phone") Số điện thoại
+              input.form-control(id="phone" type="text" name="phone")
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="email") Email
+              input.form-control(id="email" type="email" name="email")
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="accountId") Tài khoản hệ thống
+              select.form-select(id="accountId" name="accountId")
+                option(value="") -- Chọn tài khoản --
+                each account in availableAccounts
+                  option(value=account.id) #{account.fullName} (#{account.email})
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="status") Trạng thái
+              select.form-select(id="status" name="status")
+                option(value="active") Hoạt động
+                option(value="inactive") Tạm dừng
+        hr
+        h5.mb-3 Thông tin hợp đồng
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="contractNumber") Số hợp đồng
+              input.form-control(id="contractNumber" type="text" name="contractNumber")
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="contractType") Loại hợp đồng
+              input.form-control(id="contractType" type="text" name="contractType" placeholder="VD: Độc quyền, Nhượng quyền")
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="contractDate") Ngày ký hợp đồng
+              input.form-control(id="contractDate" type="date" name="contractDate")
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="expiryDate") Ngày hết hạn
+              input.form-control(id="expiryDate" type="date" name="expiryDate")
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="contractValue") Giá trị hợp đồng (đ)
+              input.form-control(id="contractValue" type="number" name="contractValue")
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="contractDescription") Mô tả hợp đồng
+              textarea.form-control(id="contractDescription" name="contractDescription" rows="3")
+        hr
+        h5.mb-3 Công nợ
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="creditLimit") Hạn mức tín dụng (đ)
+              input.form-control(id="creditLimit" type="number" name="creditLimit")
+        button.btn.btn-primary(type="submit") Tạo mới
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/list`) Hủy
+

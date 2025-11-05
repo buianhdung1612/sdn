@@ -1,0 +1,141 @@
+extends ../layouts/default.pug
+include ../mixins/pagination.pug
+include ../mixins/form-search.pug
+
+block main
+  .row
+    .col-12
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/dealer/allocation/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Tạo điều phối mới
+        .card-body.pt-0
+          .row.mb-3
+            .col-md-3
+              label.form-label Đại lý
+              select.form-select(id="filterDealer" name="dealerId")
+                option(value="") Tất cả
+                each dealer in dealers
+                  option(value=dealer.id selected=(query.dealerId === dealer.id)) #{dealer.name} (#{dealer.code})
+            .col-md-3
+              label.form-label Sản phẩm
+              select.form-select(id="filterProduct" name="productId")
+                option(value="") Tất cả
+                each product in products
+                  option(value=product.id selected=(query.productId === product.id)) #{product.name} #{product.version}
+            .col-md-3
+              label.form-label Trạng thái
+              select.form-select(id="filterStatus" name="status")
+                option(value="") Tất cả
+                option(value="pending" selected=(query.status === "pending")) Chờ phân bổ
+                option(value="allocated" selected=(query.status === "allocated")) Đã phân bổ
+                option(value="shipped" selected=(query.status === "shipped")) Đã giao hàng
+                option(value="delivered" selected=(query.status === "delivered")) Đã nhận
+                option(value="cancelled" selected=(query.status === "cancelled")) Đã hủy
+            .col-md-3.d-flex.align-items-end
+              button.btn.btn-primary.w-100(onclick="filterAllocations()") Lọc
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th STT
+                  th Đại lý
+                  th Sản phẩm
+                  th Biến thể
+                  th Số lượng
+                  th VIN
+                  th Tồn kho
+                  th Trạng thái
+                  th Ngày tạo
+                  th.text-end Hành động
+              tbody
+                if allocationList && allocationList.length > 0
+                  each item, index in allocationList
+                    tr
+                      td #{pagination.skip + index + 1}
+                      td
+                        if item.dealerId
+                          div
+                            strong #{item.dealerId.name}
+                            br
+                            small.text-muted #{item.dealerId.code}
+                        else
+                          | -
+                      td
+                        if item.productId
+                          div
+                            strong #{item.productId.name}
+                            br
+                            small.text-muted #{item.productId.version}
+                        else
+                          | -
+                      td
+                        if item.variantInfo && item.variantInfo.attributeValue
+                          each attr in item.variantInfo.attributeValue
+                            span.badge.bg-info.me-1 #{attr.label}
+                        else
+                          | -
+                      td
+                        strong #{item.quantity.toLocaleString('vi-VN')} chiếc
+                      td
+                        if item.vinCount && item.vinCount > 0
+                          a(href=`/${pathAdmin}/dealer/allocation/${item.id}/vins/list` title="Quản lý VIN")
+                            | #{item.vinCount} VIN
+                        else
+                          a(href=`/${pathAdmin}/dealer/allocation/${item.id}/vins/create` title="Thêm VIN" style="color: #007bff;")
+                            | Thêm VIN
+                      td
+                        if item.variantInfo
+                          | #{item.variantInfo.stock ? item.variantInfo.stock.toLocaleString('vi-VN') : '0'} chiếc
+                        else
+                          | -
+                      td
+                        if (item.status === "pending")
+                          span.badge.bg-warning Chờ phân bổ
+                        else if (item.status === "allocated")
+                          span.badge.bg-primary Đã phân bổ
+                        else if (item.status === "shipped")
+                          span.badge.bg-info Đã giao hàng
+                        else if (item.status === "delivered")
+                          span.badge.bg-success Đã nhận
+                        else if (item.status === "cancelled")
+                          span.badge.bg-danger Đã hủy
+                      td
+                        | #{new Date(item.createdAt).toLocaleDateString('vi-VN')}
+                      td.text-end
+                        a(href=`/${pathAdmin}/dealer/allocation/edit/${item.id}`)
+                          i.las.la-pen.text-secondary.font-16
+                        a(
+                          href="javascript:;"
+                          button-api=`delete-điều phối`
+                          data-method="PATCH"
+                          data-api=`/${pathAdmin}/dealer/allocation/delete/${item.id}`
+                        )
+                          i.las.la-trash-alt.text-secondary.font-16
+                else
+                  tr
+                    td(colspan="10" class="text-center")
+                      | Chưa có điều phối nào. 
+                      a(href=`/${pathAdmin}/dealer/allocation/create`) Tạo điều phối mới
+          +pagination()
+  script.
+    function filterAllocations() {
+      const dealerId = document.getElementById('filterDealer').value;
+      const productId = document.getElementById('filterProduct').value;
+      const status = document.getElementById('filterStatus').value;
+      
+      const params = new URLSearchParams();
+      if (dealerId) params.append('dealerId', dealerId);
+      if (productId) params.append('productId', productId);
+      if (status) params.append('status', status);
+      
+      window.location.href = `/${pathAdmin}/dealer/allocation/list?${params.toString()}`;
+    }
+

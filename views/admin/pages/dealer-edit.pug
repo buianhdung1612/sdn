@@ -1,0 +1,110 @@
+extends ../layouts/default.pug
+include ../mixins/form-group.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+    .card-body.pt-0
+      form(id="dealerEditForm")
+        .row
+          .col-md-6.col-lg-6.d-none
+            .mb-3
+              label.form-label(for="id") Id *
+              input.form-control(id="id" type="text" name="id" value=dealerDetail.id)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="name") Tên đại lý *
+              input.form-control(id="name" type="text" name="name" value=dealerDetail.name)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="code") Mã đại lý *
+              input.form-control(id="code" type="text" name="code" value=dealerDetail.code)
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="address") Địa chỉ
+              input.form-control(id="address" type="text" name="address" value=dealerDetail.address)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="phone") Số điện thoại
+              input.form-control(id="phone" type="text" name="phone" value=dealerDetail.phone)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="email") Email
+              input.form-control(id="email" type="email" name="email" value=dealerDetail.email)
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="accountId") Tài khoản hệ thống
+              select.form-select(id="accountId" name="accountId")
+                option(value="") -- Chọn tài khoản --
+                each account in availableAccounts
+                  option(value=account.id selected=(dealerDetail.accountId && dealerDetail.accountId.toString() === account.id.toString())) #{account.fullName} (#{account.email})
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="status") Trạng thái
+              select.form-select(id="status" name="status")
+                option(value="active" selected=(dealerDetail.status === "active")) Hoạt động
+                option(value="inactive" selected=(dealerDetail.status === "inactive")) Tạm dừng
+        hr
+        h5.mb-3 Thông tin hợp đồng
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="contractNumber") Số hợp đồng
+              input.form-control(id="contractNumber" type="text" name="contractNumber" value=(dealerDetail.contract && dealerDetail.contract.contractNumber))
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="contractType") Loại hợp đồng
+              input.form-control(id="contractType" type="text" name="contractType" value=(dealerDetail.contract && dealerDetail.contract.contractType))
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="contractDate") Ngày ký hợp đồng
+              - const contractDate = dealerDetail.contract && dealerDetail.contract.contractDate ? new Date(dealerDetail.contract.contractDate).toISOString().split('T')[0] : ''
+              input.form-control(id="contractDate" type="date" name="contractDate" value=contractDate)
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="expiryDate") Ngày hết hạn
+              - const expiryDate = dealerDetail.contract && dealerDetail.contract.expiryDate ? new Date(dealerDetail.contract.expiryDate).toISOString().split('T')[0] : ''
+              input.form-control(id="expiryDate" type="date" name="expiryDate" value=expiryDate)
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="contractValue") Giá trị hợp đồng (đ)
+              input.form-control(id="contractValue" type="number" name="contractValue" value=(dealerDetail.contract && dealerDetail.contract.contractValue))
+          .col-md-12.col-lg-12
+            .mb-3
+              label.form-label(for="contractDescription") Mô tả hợp đồng
+              textarea.form-control(id="contractDescription" name="contractDescription" rows="3") #{dealerDetail.contract && dealerDetail.contract.description}
+        hr
+        h5.mb-3 Công nợ
+        .row
+          .col-md-6.col-lg-6
+            .mb-3
+              label.form-label(for="creditLimit") Hạn mức tín dụng (đ)
+              input.form-control(id="creditLimit" type="number" name="creditLimit" value=(dealerDetail.debt && dealerDetail.debt.creditLimit))
+          .col-md-12.col-lg-12
+            .alert.alert-info.mb-0
+              strong Công nợ hiện tại: 
+              span.text-danger #{dealerDetail.debt && dealerDetail.debt.currentDebt ? dealerDetail.debt.currentDebt.toLocaleString('vi-VN') : '0'} đ
+        hr
+        h5.mb-3 Quản lý chỉ tiêu
+        .row
+          .col-md-12.col-lg-12
+            .alert.alert-secondary.mb-0
+              | Quản lý chỉ tiêu doanh số theo từng năm
+              a.btn.btn-sm.btn-primary.ms-2(href=`/${pathAdmin}/dealer/${dealerDetail.id}/target-sales/list`) 
+                i.fa-solid.fa-chart-line.me-1
+                | Quản lý chỉ tiêu
+        hr
+        h5.mb-3 Điều phối xe
+        .row
+          .col-md-12.col-lg-12
+            .alert.alert-secondary.mb-0
+              | Quản lý điều phối xe cho đại lý
+              a.btn.btn-sm.btn-primary.ms-2(href=`/${pathAdmin}/dealer/allocation/list?dealerId=${dealerDetail.id}`) 
+                i.fa-solid.fa-truck.me-1
+                | Xem điều phối
+        button.btn.btn-primary(type="submit") Cập nhật
+        a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/list`) Hủy
+

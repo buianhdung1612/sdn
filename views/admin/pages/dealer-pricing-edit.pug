@@ -1,0 +1,96 @@
+extends ../layouts/default.pug
+include ../mixins/dealer-sidebar.pug
+
+block main
+  .row
+    +dealer-sidebar(dealer, 'pricing')
+    .col-md-9.col-lg-10
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-secondary(
+                href=`/${pathAdmin}/dealer/${dealer.id}/pricing/list`
+                )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          form(id="pricingEditForm")
+            input(type="hidden" id="id" name="id" value=pricing.id)
+            .row
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="productId") Sản phẩm *
+                  select.form-select(id="productId" name="productId" required)
+                    option(value="") -- Chọn sản phẩm --
+                    each product in products
+                      option(value=product.id selected=(pricing.productId && pricing.productId.toString() === product.id.toString())) #{product.name} - #{product.version}
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="variantIndex") Biến thể
+                  select.form-select(id="variantIndex" name="variantIndex")
+                    option(value="") Tất cả biến thể
+                  small.text-muted Chọn sản phẩm trước để hiển thị danh sách biến thể
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="wholesalePrice") Giá sỉ (đ) *
+                  input.form-control(id="wholesalePrice" type="number" name="wholesalePrice" value=pricing.wholesalePrice required min="0" step="1000")
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="effectiveDate") Ngày hiệu lực *
+                  - const effectiveDate = pricing.effectiveDate ? new Date(pricing.effectiveDate).toISOString().split('T')[0] : ''
+                  input.form-control(id="effectiveDate" type="date" name="effectiveDate" value=effectiveDate required)
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="expiryDate") Ngày hết hạn
+                  - const expiryDate = pricing.expiryDate ? new Date(pricing.expiryDate).toISOString().split('T')[0] : ''
+                  input.form-control(id="expiryDate" type="date" name="expiryDate" value=expiryDate)
+                  small.text-muted Để trống nếu không có hạn
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="status") Trạng thái
+                  select.form-select(id="status" name="status")
+                    option(value="active" selected=(pricing.status === "active")) Hoạt động
+                    option(value="inactive" selected=(pricing.status === "inactive")) Tạm dừng
+              .col-md-12.col-lg-12
+                .mb-3
+                  label.form-label(for="notes") Ghi chú
+                  textarea.form-control(id="notes" name="notes" rows="3") #{pricing.notes || ''}
+            
+            button.btn.btn-primary(type="submit") Cập nhật
+            a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/list`) Hủy
+
+  script.
+    const selectedProductId = '#{pricing.productId ? pricing.productId.toString() : ""}';
+    const selectedVariantIndex = #{pricing.variantIndex !== null && pricing.variantIndex !== undefined ? pricing.variantIndex : 'null'};
+    
+    document.getElementById('productId').addEventListener('change', function() {
+      const productId = this.value;
+      const variantSelect = document.getElementById('variantIndex');
+      variantSelect.innerHTML = '<option value="">Tất cả biến thể</option>';
+      
+      if (productId) {
+        const product = !{JSON.stringify(products)};
+        const selectedProduct = product.find(p => p.id === productId);
+        if (selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0) {
+          selectedProduct.variants.forEach((variant, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = variant.attributeValue ? variant.attributeValue.join(', ') : `Biến thể ${index + 1}`;
+            if (selectedVariantIndex !== null && index === selectedVariantIndex) {
+              option.selected = true;
+            }
+            variantSelect.appendChild(option);
+          });
+        }
+      }
+    });
+    
+    // Trigger change để load variants khi edit
+    if (selectedProductId) {
+      document.getElementById('productId').dispatchEvent(new Event('change'));
+    }
+

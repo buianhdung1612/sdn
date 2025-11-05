@@ -17,12 +17,17 @@ block main
               input.form-control(id="name" type="text" name="name")
           .col-md-6.col-lg-6
             .mb-3
+              label.form-label(for="version") Phiên bản *
+              input.form-control(id="version" type="text" name="version")
+          .col-md-6.col-lg-6
+            .mb-3
               label.form-label(for="slug") Đường dẫn *
               .input-group
                 span.btn.btn-outline-info(
                   btn-generate-slug="Product" 
                   from="name"
                   to="slug"
+                  include-version="true"
                 ) Tự động
                 input.form-control(id="slug" type="text" name="slug")
           .col-md-6.col-lg-6
@@ -43,16 +48,20 @@ block main
                 +checkbox-list(categoryList)
           .col-md-6.col-lg-6
             .mb-3
-              label.form-label(for="priceOld") Giá cũ
-              input.form-control(id="priceOld" type="number" name="priceOld")
-          .col-md-6.col-lg-6
+              label.form-label(for="basePrice") Giá niêm yết
+              input.form-control(id="basePrice" type="number" name="basePrice")
+          .col-md-4.col-lg-4
             .mb-3
-              label.form-label(for="priceNew") Giá mới
-              input.form-control(id="priceNew" type="number" name="priceNew")
-          .col-md-6.col-lg-6
+              label.form-label(for="rangeKm") Quãng đường (km)
+              input.form-control(id="rangeKm" type="number" name="rangeKm")
+          .col-md-4.col-lg-4
             .mb-3
-              label.form-label(for="priceOld") Còn lại
-              input.form-control(id="priceOld" type="number" name="stock")
+              label.form-label(for="batteryKWh") Dung lượng pin (kWh)
+              input.form-control(id="batteryKWh" type="number" name="batteryKWh")
+          .col-md-4.col-lg-4
+            .mb-3
+              label.form-label(for="maxPowerHP") Công suất tối đa (HP)
+              input.form-control(id="maxPowerHP" type="number" name="maxPowerHP")
           .col-md-12.col-lg-12
             .mb-3
               label.form-label Danh sách thuộc tính
@@ -69,32 +78,30 @@ block main
               .table-responsive-sm
                 table.table.mb-0(variant-table)
                   thead.table-light
-                    tr
+                    tr                    
                   tbody
           .col-md-6.col-lg-6
             .mb-3
-              label.form-label Danh sách ảnh
-              div(class="form-multi-file")
-                .input-group
-                  span.btn.btn-outline-info(
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalFileManager"
-                  ) Chọn file
-                  span.btn.btn-outline-info(
-                    button-paste
-                  ) Dán file
-                .inner-list-image(multi-file="images")
-          .col-md-12.col-lg-12
-            .mb-3
-              label.form-label(for="description") Mô tả ngắn
-              textarea(id="description" name="description" textarea-mce)
+              label.form-label(for="images") Ảnh sản phẩm
+              // Hidden real file input
+              input(
+                id="images"
+                type="file"
+                name="images"
+                accept="image/*"
+                multiple
+                hidden
+              )
+              // Custom inline UI (không thêm hàng mới)
+              .input-group
+                span.btn.btn-outline-info(type="button" id="imagesChooseBtn") Chọn tệp
+                input.form-control(type="text" id="imagesSelectedText" value="Không có tệp nào được chọn" readonly)
+              // Preview ảnh đã chọn
+              .mt-2
+                .row.g-2(id="imagesPreview")
           .col-md-12.col-lg-12
             .mb-3
               label.form-label(for="content") Nội dung chi tiết
               textarea(id="content" name="content" textarea-mce)
-          .col-md-12.col-lg-12
-            .mb-3
-              label.form-label Tags
-              select(select-tag name="tags")
         button.btn.btn-primary(type="submit") Tạo mới
         a.btn.btn-danger.ms-1(href=`/${pathAdmin}/product/list`) Hủy

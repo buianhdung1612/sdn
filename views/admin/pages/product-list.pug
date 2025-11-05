@@ -1,0 +1,78 @@
+extends ../layouts/default.pug
+include ../mixins/pagination.pug
+include ../mixins/form-search.pug
+
+block main
+  .row
+    .col-12
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+            // end col
+            .col-auto
+              a.btn.btn-primary(
+                href=`/${pathAdmin}/product/create`
+                )
+                i.fa-solid.fa-plus.me-1
+                | Tạo sản phẩm
+                // end col
+            // end col
+          // end row
+        // end card-header
+        .card-body.pt-0
+          .row
+            .col-lg-6
+              +form-search()
+          .table-responsive
+            table.table.table-striped.mb-0
+              thead.table-light
+                tr
+                  th STT
+                  th Avatar
+                  th Tên sản phẩm
+                  th Phiên bản
+                  th Giá niêm yết (đ)
+                  th Số biến thể
+                  th Vị trí
+                  th Trạng thái
+                  th.text-end Hành động
+              tbody
+                each item, index in recordList
+                  tr
+                    td #{pagination.skip + index + 1}
+                    td
+                      if(item.images && item.images.length > 0)
+                        img(
+                          src=item.images[0]
+                          class="rounded thumb-md me-1 d-inline"
+                        )
+                    td #{item.name}
+                    td #{item.version || '-'}
+                    td
+                      if(item.basePrice)
+                        | #{item.basePrice.toLocaleString("vi-VN")}
+                      else
+                        | -
+                    td #{item.variants.length}
+                    td #{item.position}
+                    td
+                      if (item.status == "draft")
+                        span(class="badge bg-dark") Bản nháp
+                      else if (item.status == "active")
+                        span(class="badge bg-success") Hoạt động
+                      else if (item.status == "inactive")
+                        span(class="badge bg-danger") Tạm dừng
+                    td.text-end
+                      a(href=`/${pathAdmin}/product/edit/${item.id}`)
+                        i.las.la-pen.text-secondary.fs-20
+                      a(
+                        href="javascript:;"
+                        button-api
+                        data-method="PATCH"
+                        data-api=`/${pathAdmin}/product/delete/${item.id}`
+                      )
+                        i.las.la-trash-alt.text-secondary.fs-20
+          +pagination()
+    // end col
