@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import accountRoutes from "./account.route"
 import productRoutes from "./product.route"
 import stationRoutes from "./station.route"
+import aiRoutes from "./ai.route"
 import * as authMiddleware from "../../middlewares/client/auth.middleware";
 
 const router = Router();
@@ -23,5 +24,6 @@ router.get('/', (req: Request, res: Response) => {
 router.use('/account', accountRoutes);
 router.use('/product', authMiddleware.verifyToken, productRoutes);
 router.use('/station', stationRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

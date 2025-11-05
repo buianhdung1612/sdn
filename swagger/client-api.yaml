@@ -996,6 +996,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # =========== AI (Client - public) ==========
+  /api/client/ai/forecast-demand:
+    post:
+      summary: Dự báo nhu cầu phiên sạc và gợi ý nâng cấp hạ tầng theo trạm (public)
+      description: Endpoint công khai, không cần xác thực. Dùng dữ liệu lịch sử để dự báo và gợi ý số cổng cần bổ sung.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForecastRequest'
+      responses:
+        '200':
+          description: Kết quả dự báo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResponse'
+        '400':
+          description: Thiếu hoặc sai stationId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /station/{stationId}/status:
     get:
       summary: Theo dõi tình trạng trạm sạc và các điểm sạc
