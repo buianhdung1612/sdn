@@ -138,26 +138,29 @@ block main
                             span.badge.bg-secondary Tạm dừng
                         each attr in attributes
                           td
-                            if variant.attributeValue && variant.attributeValue.length > 0
-                              - const attrValue = variant.attributeValue.find(a => typeof a === 'object' && a.attributeId === attr.id)
-                              if attrValue
-                                | #{attrValue.label || attrValue.value || '-'}
+                            - const attrId = attr._id ? (typeof attr._id === 'string' ? attr._id : attr._id.toString()) : (attr.id ? (typeof attr.id === 'string' ? attr.id : attr.id.toString()) : null)
+                            if attrId && variant.attributeValueMap && variant.attributeValueMap[attrId]
+                              - const attrValue = variant.attributeValueMap[attrId]
+                              if attrValue.label
+                                | #{attrValue.label}
+                              else if attrValue.value
+                                | #{attrValue.value}
                               else
                                 | -
                             else
                               | -
                         td
-                          if variant.oldPrice
-                            | #{variant.oldPrice.toLocaleString('vi-VN')} đ
+                          if variant.priceOld
+                            | #{variant.priceOld.toLocaleString('vi-VN')} đ
                           else
                             | -
                         td
-                          if variant.newPrice
-                            strong.text-success #{variant.newPrice.toLocaleString('vi-VN')} đ
+                          if variant.priceNew
+                            strong.text-success #{variant.priceNew.toLocaleString('vi-VN')} đ
                           else
                             | -
                         td
-                          if variant.stock
+                          if variant.stock !== undefined && variant.stock !== null
                             span.badge.bg-primary #{variant.stock.toLocaleString('vi-VN')} chiếc
                           else
                             | 0 chiếc

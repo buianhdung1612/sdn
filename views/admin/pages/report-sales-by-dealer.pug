@@ -1,0 +1,87 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+        .col-auto
+          a.btn.btn-secondary(href=`/${pathAdmin}/report/sales-by-dealer`)
+            i.fa-solid.fa-sync.me-1
+            | Làm mới
+    .card-body.pt-0
+      .row.mb-3
+        .col-md-3
+          label.form-label Từ ngày
+          input.form-control(type="date" id="startDate" value=filters.startDate)
+        .col-md-3
+          label.form-label Đến ngày
+          input.form-control(type="date" id="endDate" value=filters.endDate)
+        .col-md-3
+          label.form-label Đại lý
+          select.form-select(id="dealerId")
+            option(value="") Tất cả đại lý
+            each dealer in dealers
+              option(value=dealer._id ? dealer._id.toString() : dealer.id selected=(filters.dealerId === (dealer._id ? dealer._id.toString() : dealer.id))) #{dealer.name} (#{dealer.code})
+        .col-md-3.d-flex.align-items-end
+          button.btn.btn-primary.w-100(onclick="filterReports()") Lọc
+      if totalStats
+        .row.mb-4
+          .col-md-4
+            .card.bg-primary.text-white
+              .card-body
+                h6.card-title Tổng số lượng
+                h3.mb-0 #{totalStats.totalQuantity ? totalStats.totalQuantity.toLocaleString('vi-VN') : 0} chiếc
+          .col-md-4
+            .card.bg-success.text-white
+              .card-body
+                h6.card-title Tổng doanh số
+                h3.mb-0 #{totalStats.totalRevenue ? totalStats.totalRevenue.toLocaleString('vi-VN') : 0} đ
+          .col-md-4
+            .card.bg-info.text-white
+              .card-body
+                h6.card-title Tổng số điều phối
+                h3.mb-0 #{totalStats.totalAllocations ? totalStats.totalAllocations.toLocaleString('vi-VN') : 0} đơn
+      .table-responsive
+        table.table.table-bordered.table-hover
+          thead.table-light
+            tr
+              th STT
+              th Đại lý
+              th Địa chỉ
+              th Số lượng (chiếc)
+              th Doanh số (đ)
+              th Số điều phối
+          tbody
+            if salesStats && salesStats.length > 0
+              each stat, index in salesStats
+                tr
+                  td #{index + 1}
+                  td
+                    strong #{stat.dealerName || '-'}
+                    br
+                    small.text-muted #{stat.dealerCode || '-'}
+                  td #{stat.dealerAddress || '-'}
+                  td.text-center
+                    strong.text-primary #{stat.totalQuantity ? stat.totalQuantity.toLocaleString('vi-VN') : 0}
+                  td.text-end
+                    strong.text-success #{stat.totalRevenue ? stat.totalRevenue.toLocaleString('vi-VN') : 0} đ
+                  td.text-center #{stat.totalAllocations ? stat.totalAllocations.toLocaleString('vi-VN') : 0}
+            else
+              tr
+                td(colspan="6" class="text-center") Không có dữ liệu trong khoảng thời gian đã chọn
+  script.
+    function filterReports() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const dealerId = document.getElementById('dealerId').value;
+      
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (dealerId) params.append('dealerId', dealerId);
+      
+      window.location.href = `/${pathAdmin}/report/sales-by-dealer?${params.toString()}`;
+    }
+

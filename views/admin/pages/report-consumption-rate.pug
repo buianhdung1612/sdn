@@ -1,0 +1,109 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+        .col-auto
+          a.btn.btn-secondary(href=`/${pathAdmin}/report/consumption-rate`)
+            i.fa-solid.fa-sync.me-1
+            | Làm mới
+    .card-body.pt-0
+      .row.mb-3
+        .col-md-3
+          label.form-label Từ ngày
+          input.form-control(type="date" id="startDate" value=filters.startDate)
+        .col-md-3
+          label.form-label Đến ngày
+          input.form-control(type="date" id="endDate" value=filters.endDate)
+        .col-md-2
+          label.form-label Sản phẩm
+          select.form-select(id="productId")
+            option(value="") Tất cả
+            each product in products
+              option(value=product._id ? product._id.toString() : product.id selected=(filters.productId === (product._id ? product._id.toString() : product.id))) #{product.name}
+        .col-md-2
+          label.form-label Đại lý
+          select.form-select(id="dealerId")
+            option(value="") Tất cả
+            each dealer in dealers
+              option(value=dealer._id ? dealer._id.toString() : dealer.id selected=(filters.dealerId === (dealer._id ? dealer._id.toString() : dealer.id))) #{dealer.name}
+        .col-md-2.d-flex.align-items-end
+          button.btn.btn-primary.w-100(onclick="filterReports()") Lọc
+      .row.mb-4
+        .col-md-4
+          .card.bg-info.text-white
+            .card-body
+              h6.card-title Tổng số lượng tiêu thụ
+              h3.mb-0 #{totalConsumed ? totalConsumed.toLocaleString('vi-VN') : 0} chiếc
+        .col-md-4
+          .card.bg-success.text-white
+            .card-body
+              h6.card-title Tốc độ tiêu thụ trung bình
+              h3.mb-0 #{averageDailyConsumption ? averageDailyConsumption : 0} chiếc/ngày
+      .row
+        .col-md-6
+          .card
+            .card-header
+              h5.card-title.mb-0 Tiêu thụ theo ngày
+            .card-body
+              .table-responsive
+                table.table.table-sm.table-bordered
+                  thead.table-light
+                    tr
+                      th Ngày
+                      th.text-end Số lượng (chiếc)
+                      th.text-end Số điều phối
+                  tbody
+                    if dailyConsumption && dailyConsumption.length > 0
+                      each item in dailyConsumption
+                        tr
+                          td #{new Date(item._id).toLocaleDateString('vi-VN')}
+                          td.text-end #{item.totalQuantity ? item.totalQuantity.toLocaleString('vi-VN') : 0}
+                          td.text-end #{item.totalAllocations ? item.totalAllocations.toLocaleString('vi-VN') : 0}
+                    else
+                      tr
+                        td(colspan="3" class="text-center") Không có dữ liệu
+        .col-md-6
+          .card
+            .card-header
+              h5.card-title.mb-0 Tiêu thụ theo sản phẩm
+            .card-body
+              .table-responsive
+                table.table.table-sm.table-bordered
+                  thead.table-light
+                    tr
+                      th Sản phẩm
+                      th.text-end Số lượng (chiếc)
+                      th.text-end Số điều phối
+                  tbody
+                    if productConsumption && productConsumption.length > 0
+                      each item in productConsumption
+                        tr
+                          td
+                            strong #{item.productName}
+                            br
+                            small.text-muted #{item.productVersion}
+                          td.text-end #{item.totalQuantity ? item.totalQuantity.toLocaleString('vi-VN') : 0}
+                          td.text-end #{item.totalAllocations ? item.totalAllocations.toLocaleString('vi-VN') : 0}
+                    else
+                      tr
+                        td(colspan="3" class="text-center") Không có dữ liệu
+  script.
+    function filterReports() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const productId = document.getElementById('productId').value;
+      const dealerId = document.getElementById('dealerId').value;
+      
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (productId) params.append('productId', productId);
+      if (dealerId) params.append('dealerId', dealerId);
+      
+      window.location.href = `/${pathAdmin}/report/consumption-rate?${params.toString()}`;
+    }
+

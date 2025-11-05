@@ -1,0 +1,105 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+        .col-auto
+          a.btn.btn-secondary(href=`/${pathAdmin}/report/inventory`)
+            i.fa-solid.fa-sync.me-1
+            | Làm mới
+    .card-body.pt-0
+      .row.mb-3
+        .col-md-4
+          label.form-label Sản phẩm
+          select.form-select(id="productId")
+            option(value="") Tất cả sản phẩm
+            each product in products
+              option(value=product._id ? product._id.toString() : product.id selected=(filters.productId === (product._id ? product._id.toString() : product.id))) #{product.name} #{product.version}
+        .col-md-4
+          label.form-label Đại lý
+          select.form-select(id="dealerId")
+            option(value="") Tất cả đại lý
+            each dealer in dealers
+              option(value=dealer._id ? dealer._id.toString() : dealer.id selected=(filters.dealerId === (dealer._id ? dealer._id.toString() : dealer.id))) #{dealer.name} (#{dealer.code})
+        .col-md-4.d-flex.align-items-end
+          button.btn.btn-primary.w-100(onclick="filterReports()") Lọc
+      ul.nav.nav-tabs.mb-3(role="tablist")
+        li.nav-item(role="presentation")
+          button.nav-link.active(id="evm-tab" data-bs-toggle="tab" data-bs-target="#evm" type="button" role="tab") Tồn kho tổng (EVM Stock)
+        li.nav-item(role="presentation")
+          button.nav-link(id="dealer-tab" data-bs-toggle="tab" data-bs-target="#dealer" type="button" role="tab") Tồn kho đại lý
+      .tab-content
+        #evm.tab-pane.fade.show.active(role="tabpanel")
+          .table-responsive
+            table.table.table-bordered.table-hover
+              thead.table-light
+                tr
+                  th STT
+                  th Sản phẩm
+                  th Biến thể
+                  th Tồn kho tổng
+                  th Đã phân bổ
+                  th Tồn kho khả dụng
+              tbody
+                if evmStockStats && evmStockStats.length > 0
+                  each stat, index in evmStockStats
+                    tr
+                      td #{index + 1}
+                      td
+                        strong #{stat.productName}
+                        br
+                        small.text-muted #{stat.productVersion}
+                      td #{stat.variantLabel}
+                      td.text-center
+                        span.badge.bg-primary.fs-6 #{stat.totalStock ? stat.totalStock.toLocaleString('vi-VN') : 0} chiếc
+                      td.text-center
+                        span.badge.bg-warning.fs-6 #{stat.allocatedStock ? stat.allocatedStock.toLocaleString('vi-VN') : 0} chiếc
+                      td.text-center
+                        span.badge.bg-success.fs-6 #{stat.availableStock ? stat.availableStock.toLocaleString('vi-VN') : 0} chiếc
+                else
+                  tr
+                    td(colspan="6" class="text-center") Không có dữ liệu
+        #dealer.tab-pane.fade(role="tabpanel")
+          .table-responsive
+            table.table.table-bordered.table-hover
+              thead.table-light
+                tr
+                  th STT
+                  th Đại lý
+                  th Sản phẩm
+                  th Biến thể
+                  th Tồn kho
+              tbody
+                if dealerInventoryStats && dealerInventoryStats.length > 0
+                  each stat, index in dealerInventoryStats
+                    tr
+                      td #{index + 1}
+                      td
+                        strong #{stat.dealerName}
+                        br
+                        small.text-muted #{stat.dealerCode}
+                      td
+                        strong #{stat.productName}
+                        br
+                        small.text-muted #{stat.productVersion}
+                      td #{stat.variantLabel}
+                      td.text-center
+                        span.badge.bg-primary.fs-6 #{stat.totalStock ? stat.totalStock.toLocaleString('vi-VN') : 0} chiếc
+                else
+                  tr
+                    td(colspan="5" class="text-center") Không có dữ liệu
+  script.
+    function filterReports() {
+      const productId = document.getElementById('productId').value;
+      const dealerId = document.getElementById('dealerId').value;
+      
+      const params = new URLSearchParams();
+      if (productId) params.append('productId', productId);
+      if (dealerId) params.append('dealerId', dealerId);
+      
+      window.location.href = `/${pathAdmin}/report/inventory?${params.toString()}`;
+    }
+
