@@ -8,12 +8,24 @@ servers:
     description: Development server
   - url: https://your-domain.com/api/client
     description: Production server
+  - url: http://localhost:3000
+    description: Root server (Admin & Client absolute paths)
+  - url: https://your-domain.com
+    description: Root Production server
 
 tags:
   - name: Authentication
     description: API xác thực cho ứng dụng client
   - name: Products
     description: API quản lý sản phẩm
+  - name: Stations
+    description: API dành cho Nhân viên Trạm sạc (theo dõi & báo cáo sự cố)
+  - name: Analytics
+    description: Báo cáo doanh thu và tần suất sử dụng (Admin)
+  - name: AI
+    description: Dự báo nhu cầu và gợi ý nâng cấp hạ tầng (Admin)
+  - name: Stations
+    description: API dành cho Nhân viên Trạm sạc (theo dõi & báo cáo sự cố)
 
 components:
   securitySchemes:
@@ -22,6 +34,11 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token từ API đăng nhập. Format: Bearer {token}
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: tokenAdmin
+      description: Cookie xác thực Admin (đăng nhập từ trang Admin)
 
   schemas:
     User:
@@ -231,6 +248,335 @@ components:
           properties:
             product:
               $ref: '#/components/schemas/ProductDetail'
+
+    # =========== Stations (Client) schemas ==========
+    ChargingPoint:
+      type: object
+      properties:
+        id:
+          type: string
+        identifier:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, occupied, maintenance]
+        powerKW:
+          type: number
+        lastHeartbeatAt:
+          type: string
+          format: date-time
+
+    Station:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, maintenance]
+        location:
+          type: object
+          properties:
+            address:
+              type: string
+            lat:
+              type: number
+            lng:
+              type: number
+        totalPoints:
+          type: integer
+        onlinePoints:
+          type: integer
+        occupiedPoints:
+          type: integer
+
+    StationStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            station:
+              $ref: '#/components/schemas/Station'
+            chargingPoints:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChargingPoint'
+
+    IncidentReportRequest:
+      type: object
+      required: [type, description]
+      properties:
+        type:
+          type: string
+          example: hardware_failure
+        description:
+          type: string
+          minLength: 5
+          example: "Màn hình cột sạc CP-03 không hiển thị."
+        severity:
+          type: string
+          enum: [low, medium, high]
+          default: low
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    IncidentReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+
+    # =========== Admin Analytics & AI schemas ==========
+    RevenueStation:
+      type: object
+      properties:
+        stationId:
+          type: string
+        stationName:
+          type: string
+        stationCode:
+          type: string
+        region:
+          type: string
+          nullable: true
+        totalAmount:
+          type: number
+        totalEnergyKWh:
+          type: number
+        sessions:
+          type: integer
+
+    RevenueRegion:
+      type: object
+      properties:
+        region:
+          type: string
+          nullable: true
+        totalAmount:
+          type: number
+        totalEnergyKWh:
+          type: number
+        sessions:
+          type: integer
+
+    RevenueTime:
+      type: object
+      properties:
+        period:
+          type: string
+          example: 2025-10-31
+        totalAmount:
+          type: number
+        totalEnergyKWh:
+          type: number
+        sessions:
+          type: integer
+
+    UsageByStation:
+      type: object
+      properties:
+        stationId:
+          type: string
+        stationName:
+          type: string
+        stationCode:
+          type: string
+        region:
+          type: string
+          nullable: true
+        sessions:
+          type: integer
+        totalEnergyKWh:
+          type: number
+
+    PeakHour:
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        sessions:
+          type: integer
+
+    ForecastRequest:
+      type: object
+      required: [stationId]
+      properties:
+        stationId:
+          type: string
+        horizonDays:
+          type: integer
+          default: 14
+        targetUtilization:
+          type: number
+          default: 0.7
+        includeLLMExplanation:
+          type: boolean
+          default: true
+
+    ForecastPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          example: 2025-11-06
+        sessions:
+          type: integer
+
+    ForecastResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            station:
+              type: object
+              properties:
+                id: { type: string }
+                name: { type: string }
+                code: { type: string }
+                region: { type: string, nullable: true }
+                points: { type: integer }
+            horizonDays:
+              type: integer
+            forecast:
+              type: array
+              items:
+                $ref: '#/components/schemas/ForecastPoint'
+            stats:
+              type: object
+              properties:
+                overallAvgDailySessions: { type: number }
+                avgSessionDurationHours: { type: number }
+                currentUtilAtPeak: { type: number }
+            suggestions:
+              type: object
+              properties:
+                requiredPointsForTarget: { type: integer }
+                recommendedAdditionalPoints: { type: integer }
+                targetUtilization: { type: number }
+            explanation:
+              type: string
+              nullable: true
+
+    ChargingPoint:
+      type: object
+      properties:
+        id:
+          type: string
+        identifier:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, occupied, maintenance]
+        powerKW:
+          type: number
+        lastHeartbeatAt:
+          type: string
+          format: date-time
+
+    Station:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, maintenance]
+        location:
+          type: object
+          properties:
+            address:
+              type: string
+            lat:
+              type: number
+            lng:
+              type: number
+        totalPoints:
+          type: integer
+        onlinePoints:
+          type: integer
+        occupiedPoints:
+          type: integer
+
+    StationStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            station:
+              $ref: '#/components/schemas/Station'
+            chargingPoints:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChargingPoint'
+
+    IncidentReportRequest:
+      type: object
+      required: [type, description]
+      properties:
+        type:
+          type: string
+          example: hardware_failure
+        description:
+          type: string
+          minLength: 5
+          example: "Màn hình cột sạc CP-03 không hiển thị."
+        severity:
+          type: string
+          enum: [low, medium, high]
+          default: low
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    IncidentReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            id:
+              type: string
 
 paths:
   /account/login:
@@ -460,27 +806,314 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Token không hợp lệ hoặc không được cung cấp!
-        '403':
-          description: Không có quyền xem sản phẩm này
+
+  # =========== Stations (Client) ==========
+  /station/{stationId}/status:
+    get:
+      summary: Theo dõi tình trạng trạm sạc và các điểm sạc
+      tags:
+        - Stations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          description: ID của trạm sạc
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lấy tình trạng trạm sạc thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationStatusResponse'
+        '400': { description: stationId không hợp lệ }
+        '401': { description: Token không hợp lệ hoặc không được cung cấp }
+        '404': { description: Không tìm thấy trạm sạc }
+        '500': { description: Lỗi server }
+
+  /station/{stationId}/incidents:
+    post:
+      summary: Báo cáo sự cố tại trạm sạc
+      tags:
+        - Stations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          description: ID của trạm sạc
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentReportRequest'
+      responses:
+        '201':
+          description: Gửi báo cáo sự cố thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentReportResponse'
+        '400': { description: Dữ liệu không hợp lệ hoặc stationId sai }
+        '401': { description: Token không hợp lệ hoặc không được cung cấp }
+        '404': { description: Không tìm thấy trạm sạc }
+        '500': { description: Lỗi server }
+
+  # =========== Analytics (Admin) ==========
+  /admin/analytics/revenue:
+    get:
+      summary: Thống kê doanh thu theo trạm/khu vực/thời gian
+      tags: [Analytics]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [station, region, time]
+            default: station
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+          description: Chỉ áp dụng khi groupBy=time
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Thống kê doanh thu
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: '#/components/schemas/RevenueStation' }
+                  - type: array
+                    items: { $ref: '#/components/schemas/RevenueRegion' }
+                  - type: array
+                    items: { $ref: '#/components/schemas/RevenueTime' }
+        '401': { description: Chưa đăng nhập Admin (cookie không hợp lệ) }
+        '500': { description: Lỗi server }
+
+  /admin/analytics/usage:
+    get:
+      summary: Thống kê tần suất sử dụng và giờ cao điểm
+      tags: [Analytics]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Thống kê tần suất sử dụng & giờ cao điểm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      byStation:
+                        type: array
+                        items: { $ref: '#/components/schemas/UsageByStation' }
+                      peakHours:
+                        type: array
+                        items: { $ref: '#/components/schemas/PeakHour' }
+        '401': { description: Chưa đăng nhập Admin (cookie không hợp lệ) }
+        '500': { description: Lỗi server }
+
+  # =========== AI (Admin) ==========
+  /admin/ai/forecast-demand:
+    post:
+      summary: Dự báo nhu cầu phiên sạc và gợi ý nâng cấp hạ tầng theo trạm
+      tags: [AI]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForecastRequest'
+      responses:
+        '200':
+          description: Kết quả dự báo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResponse'
+        '400':
+          description: Thiếu hoặc sai stationId
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Bạn không có quyền xem sản phẩm này!
+        '401':
+          description: Chưa đăng nhập Admin (cookie không hợp lệ)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =========== AI (Client - public) ==========
+  /api/client/ai/forecast-demand:
+    post:
+      summary: Dự báo nhu cầu phiên sạc và gợi ý nâng cấp hạ tầng theo trạm (public)
+      description: Endpoint công khai, không cần xác thực. Dùng dữ liệu lịch sử để dự báo và gợi ý số cổng cần bổ sung.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForecastRequest'
+      responses:
+        '200':
+          description: Kết quả dự báo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResponse'
+        '400':
+          description: Thiếu hoặc sai stationId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /station/{stationId}/status:
+    get:
+      summary: Theo dõi tình trạng trạm sạc và các điểm sạc
+      tags:
+        - Stations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          description: ID của trạm sạc
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lấy tình trạng trạm sạc thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationStatusResponse'
+        '400':
+          description: stationId không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token không hợp lệ hoặc không được cung cấp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Không tìm thấy sản phẩm
+          description: Không tìm thấy trạm sạc
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Không tìm thấy sản phẩm!
+        '500':
+          description: Lỗi server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /station/{stationId}/incidents:
+    post:
+      summary: Báo cáo sự cố tại trạm sạc
+      tags:
+        - Stations
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: stationId
+          in: path
+          required: true
+          description: ID của trạm sạc
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentReportRequest'
+      responses:
+        '201':
+          description: Gửi báo cáo sự cố thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentReportResponse'
+        '400':
+          description: Dữ liệu không hợp lệ hoặc stationId sai
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token không hợp lệ hoặc không được cung cấp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Không tìm thấy trạm sạc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Lỗi server
           content:
