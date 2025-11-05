@@ -1008,7 +1008,6 @@ if (accountAdminCreateForm) {
             const email = event.target.email.value;
             const password = event.target.password.value;
             const status = event.target.status.value;
-            const avatar = event.target.avatar.value;
             const roles = getCheckboxList("roles");
 
             // Tạo FormData
@@ -1017,7 +1016,6 @@ if (accountAdminCreateForm) {
             formData.append("email", email);
             formData.append("password", password);
             formData.append("status", status);
-            formData.append("avatar", avatar);
             formData.append("roles", JSON.stringify(roles));
 
             fetch(`/${pathAdmin}/account-admin/create`, {
@@ -1077,7 +1075,6 @@ if (accountAdminEditForm) {
             const fullName = event.target.fullName.value;
             const email = event.target.email.value;
             const status = event.target.status.value;
-            const avatar = event.target.avatar.value;
             const roles = getCheckboxList("roles");
 
             // Tạo FormData
@@ -1085,7 +1082,6 @@ if (accountAdminEditForm) {
             formData.append("fullName", fullName);
             formData.append("email", email);
             formData.append("status", status);
-            formData.append("avatar", avatar);
             formData.append("roles", JSON.stringify(roles));
 
             fetch(`/${pathAdmin}/account-admin/edit/${id}`, {
@@ -1665,6 +1661,30 @@ const allocationEditForm = document.querySelector("#allocationEditForm");
 if (allocationEditForm) {
     const validation = new JustValidate('#allocationEditForm');
 
+    // Định nghĩa hàm submit trước
+    const submitAllocationForm = function(id, quantity, status, notes) {
+        const formData = new FormData();
+        formData.append("quantity", quantity);
+        formData.append("status", status);
+        formData.append("notes", notes);
+
+        fetch(`/${pathAdmin}/dealer/allocation/edit/${id}`, {
+            method: "PATCH",
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code == "error") {
+                    notyf.error(data.message);
+                }
+
+                if (data.code == "success") {
+                    drawNotify("success", data.message);
+                    window.location.href = `/${pathAdmin}/dealer/allocation/list`;
+                }
+            })
+    }
+
     validation
         .addField('#quantity', [
             {
@@ -1685,28 +1705,34 @@ if (allocationEditForm) {
             const quantity = event.target.quantity.value;
             const status = event.target.status.value;
             const notes = event.target.notes.value;
+            const currentStatus = document.getElementById('currentStatus')?.value || '';
 
-            // Tạo FormData
-            const formData = new FormData();
-            formData.append("quantity", quantity);
-            formData.append("status", status);
-            formData.append("notes", notes);
-
-            fetch(`/${pathAdmin}/dealer/allocation/edit/${id}`, {
-                method: "PATCH",
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.code == "error") {
-                        notyf.error(data.message);
+            // Kiểm tra nếu đang chọn "delivered" hoặc "cancelled"
+            if ((status === "delivered" || status === "cancelled") && currentStatus !== status) {
+                const statusText = status === "delivered" ? "Đã nhận" : "Đã hủy";
+                const warningText = status === "delivered" 
+                    ? "Sau khi xác nhận trạng thái <strong>Đã nhận</strong>, bạn sẽ không thể thay đổi lại trạng thái này. Đại lý đã nhận hàng và công nợ sẽ được tính toán."
+                    : "Sau khi xác nhận trạng thái <strong>Đã hủy</strong>, bạn sẽ không thể thay đổi lại trạng thái này. Tồn kho sẽ được hoàn trả.";
+                
+                Swal.fire({
+                    title: 'Xác nhận thay đổi trạng thái',
+                    html: `${warningText}<br><br><strong>Bạn có chắc chắn muốn chuyển sang trạng thái "${statusText}" không?</strong>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Xác nhận',
+                    cancelButtonText: 'Hủy',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Tiếp tục submit form
+                        submitAllocationForm(id, quantity, status, notes);
                     }
-
-                    if (data.code == "success") {
-                        drawNotify("success", data.message);
-                        window.location.href = `/${pathAdmin}/dealer/allocation/list`;
-                    }
-                })
+                });
+            } else {
+                // Submit bình thường nếu không phải delivered/cancelled
+                submitAllocationForm(id, quantity, status, notes);
+            }
         })
 }
 // End Allocation Edit Form
@@ -1715,18 +1741,42 @@ if (allocationEditForm) {
 const vinCreateForm = document.querySelector("#vinCreateForm");
 if (vinCreateForm) {
     const validation = new JustValidate('#vinCreateForm');
+    
+    // Lấy số lượng VIN cần thiết từ data attribute hoặc placeholder
+    const vinsTextarea = document.getElementById('vins');
+    const requiredVins = parseInt(vinsTextarea?.dataset?.requiredVins || vinsTextarea?.placeholder?.match(/\d+/)?.[0]) || 0;
 
     validation
         .addField('#vins', [
             {
                 rule: 'required',
                 errorMessage: 'Vui lòng nhập VIN!'
+            },
+            {
+                validator: (value) => {
+                    if (!value) return true; // required đã xử lý
+                    const vins = value.split('\n')
+                        .map((vin) => vin.trim().toUpperCase())
+                        .filter((vin) => vin.length > 0);
+                    return vins.length === requiredVins;
+                },
+                errorMessage: `Bạn phải nhập đúng ${requiredVins} VIN!`
             }
         ])
         .onSuccess((event) => {
             event.preventDefault();
 
             const vins = event.target.vins.value;
+            
+            // Validate lại số lượng VIN
+            const vinArray = vins.split('\n')
+                .map((vin) => vin.trim().toUpperCase())
+                .filter((vin) => vin.length > 0);
+            
+            if (vinArray.length !== requiredVins) {
+                notyf.error(`Bạn phải nhập đúng ${requiredVins} VIN! Bạn đã nhập ${vinArray.length} VIN.`);
+                return;
+            }
 
             // Lấy allocationId từ URL
             const pathParts = window.location.pathname.split('/');
@@ -2831,6 +2881,12 @@ if (pricingCreateForm) {
                 errorMessage: 'Vui lòng chọn sản phẩm!'
             }
         ])
+        .addField('#variantIndex', [
+            {
+                rule: 'required',
+                errorMessage: 'Vui lòng chọn biến thể!'
+            }
+        ])
         .addField('#wholesalePrice', [
             {
                 rule: 'required',
@@ -2877,6 +2933,12 @@ if (pricingEditForm) {
     const validation = new JustValidate('#pricingEditForm');
 
     validation
+        .addField('#variantIndex', [
+            {
+                rule: 'required',
+                errorMessage: 'Vui lòng chọn biến thể!'
+            }
+        ])
         .addField('#wholesalePrice', [
             {
                 rule: 'required',

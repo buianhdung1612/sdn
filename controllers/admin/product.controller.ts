@@ -393,6 +393,46 @@ export const list = async (req: Request, res: Response) => {
     });
 }
 
+export const detail = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const productDetail = await Product.findOne({
+            _id: id,
+            deleted: false
+        });
+
+        if (!productDetail) {
+            res.redirect(`/${pathAdmin}/product/list`);
+            return;
+        }
+
+        // Lấy thông tin category
+        const categoryIds = productDetail.category || [];
+        const categories = await CategoryProduct.find({
+            _id: { $in: categoryIds },
+            deleted: false
+        });
+
+        // Lấy thông tin attributes
+        const attributeIds = productDetail.attributes || [];
+        const attributes = await AttributeProduct.find({
+            _id: { $in: attributeIds },
+            deleted: false
+        });
+
+        res.render("admin/pages/product-detail", {
+            pageTitle: "Chi tiết sản phẩm",
+            productDetail: productDetail,
+            categories: categories,
+            attributes: attributes
+        })
+    } catch (error) {
+        console.log(error)
+        res.redirect(`/${pathAdmin}/product/list`);
+    }
+}
+
 export const edit = async (req: Request, res: Response) => {
     try {
         const categoryList = await CategoryProduct.find({

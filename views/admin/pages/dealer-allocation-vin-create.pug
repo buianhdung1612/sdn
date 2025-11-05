@@ -7,7 +7,6 @@ block main
       .row.align-items-center
         .col
           h4.card-title #{pageTitle}
-          small.text-muted Điều phối: #{allocation.dealerId && allocation.dealerId.name ? allocation.dealerId.name : ''} (#{allocation.dealerId && allocation.dealerId.code ? allocation.dealerId.code : ''})
         .col-auto
           a.btn.btn-secondary(
             href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/list`
@@ -16,21 +15,13 @@ block main
             | Quay lại
     .card-body.pt-0
       form(id="vinCreateForm")
-        .alert.alert-info.mb-3
-          strong Số lượng điều phối:
-          |  #{allocation.quantity} chiếc
-          br
-          strong Đã thêm:
-          |  #{currentVinCount} VIN
-          br
-          strong Còn lại có thể thêm:
-          |  #{maxVins - currentVinCount} VIN
         .row
           .col-md-12.col-lg-12
             .mb-3
-              label.form-label(for="vins") Số khung (VIN) *
-              textarea.form-control(id="vins" name="vins" rows="10" placeholder="Nhập số khung (VIN), mỗi dòng một VIN" required)
-              small.text-muted Mỗi dòng là một số khung (VIN). Tối đa #{maxVins - currentVinCount} VIN còn lại.
+              label.form-label(for="vins") Số khung (VIN) * 
+                small.text-muted (#{requiredVins} VIN)
+              textarea.form-control(id="vins" name="vins" rows="10" placeholder=`Nhập ${requiredVins} số khung (VIN), mỗi dòng một VIN` required data-required-vins=requiredVins)
+              small.text-muted Mỗi dòng là một số khung (VIN). Bắt buộc nhập đúng #{requiredVins} VIN.
         button.btn.btn-primary(type="submit") Thêm VIN
         a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/list`) Hủy
 

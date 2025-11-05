@@ -52,10 +52,14 @@ block main
                       td
                         if item.variantIndex !== null && item.variantIndex !== undefined
                           - const variant = item.productId && item.productId.variants && item.productId.variants[item.variantIndex]
-                          if variant
-                            | #{variant.attributeValue ? variant.attributeValue.join(', ') : 'N/A'}
+                          if variant && variant.attributeValue
+                            - const labels = variant.attributeValue.map(attr => (typeof attr === 'string' ? attr : (attr && attr.label ? attr.label : ''))).filter(l => l !== '')
+                            if labels.length > 0
+                              | #{labels.join(', ')}
+                            else
+                              | Biến thể #{item.variantIndex + 1}
                           else
-                            | N/A
+                            | Biến thể #{item.variantIndex + 1}
                         else
                           span.text-muted Tất cả biến thể
                       td
@@ -78,13 +82,17 @@ block main
                       td
                         | #{new Date(item.createdAt).toLocaleDateString('vi-VN')}
                       td.text-end
-                        a(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/edit/${item.id}`)
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/detail/${item._id ? item._id.toString() : item.id}` title="Xem chi tiết")
+                          i.las.la-eye.text-info.font-16
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/edit/${item._id ? item._id.toString() : item.id}` title="Chỉnh sửa" style="margin-left: 8px;")
                           i.las.la-pen.text-secondary.font-16
                         a(
                           href="javascript:;"
                           button-api=`delete-giá sỉ`
                           data-method="PATCH"
-                          data-api=`/${pathAdmin}/dealer/${dealer.id}/pricing/delete/${item.id}`
+                          data-api=`/${pathAdmin}/dealer/${dealer.id}/pricing/delete/${item._id ? item._id.toString() : item.id}`
+                          title="Xóa"
+                          style="margin-left: 8px;"
                         )
                           i.las.la-trash-alt.text-secondary.font-16
                 else

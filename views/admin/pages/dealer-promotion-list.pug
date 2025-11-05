@@ -99,13 +99,17 @@ block main
                       td
                         | #{new Date(item.createdAt).toLocaleDateString('vi-VN')}
                       td.text-end
-                        a(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/edit/${item.id}`)
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/detail/${item.id}` title="Xem chi tiết")
+                          i.las.la-eye.text-info.font-16
+                        a(href=`/${pathAdmin}/dealer/${dealer.id}/promotion/edit/${item.id}` title="Chỉnh sửa" style="margin-left: 8px;")
                           i.las.la-pen.text-secondary.font-16
                         a(
                           href="javascript:;"
                           button-api=`delete-khuyến mãi`
                           data-method="PATCH"
                           data-api=`/${pathAdmin}/dealer/${dealer.id}/promotion/delete/${item.id}`
+                          title="Xóa"
+                          style="margin-left: 8px;"
                         )
                           i.las.la-trash-alt.text-secondary.font-16
                 else

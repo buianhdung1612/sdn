@@ -1,0 +1,66 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          if accountDetail
+            small.text-muted #{accountDetail.fullName}
+        .col-auto
+          a.btn.btn-primary(href=`/${pathAdmin}/account-admin/edit/${accountDetail.id}`)
+            i.las.la-pen.me-1
+            | Chỉnh sửa
+          a.btn.btn-info.ms-2(href=`/${pathAdmin}/account-admin/change-password/${accountDetail.id}`)
+            i.las.la-key.me-1
+            | Đổi mật khẩu
+          a.btn.btn-secondary.ms-2(href=`/${pathAdmin}/account-admin/list`)
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      if accountDetail
+        .row
+          .col-md-6
+            h5.mb-3 Thông tin tài khoản
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Họ tên
+                p.mb-0.fs-5 #{accountDetail.fullName}
+              .col-md-6
+                label.form-label.text-muted.fw-bold Email
+                p.mb-0.fs-5 #{accountDetail.email}
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Trạng thái
+                if (accountDetail.status === "initial")
+                  span.badge.bg-warning.fs-6 Khởi tạo
+                else if (accountDetail.status === "active")
+                  span.badge.bg-success.fs-6 Hoạt động
+                else if(accountDetail.status === "inactive")
+                  span.badge.bg-danger.fs-6 Tạm dừng
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Ngày tạo
+                p.mb-0 #{accountDetail.createdAt ? new Date(accountDetail.createdAt).toLocaleString('vi-VN') : '-'}
+              .col-md-6
+                label.form-label.text-muted.fw-bold Ngày cập nhật
+                p.mb-0 #{accountDetail.updatedAt ? new Date(accountDetail.updatedAt).toLocaleString('vi-VN') : '-'}
+            if accountDetail.lastLoginAt
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Lần đăng nhập cuối
+                  p.mb-0 #{new Date(accountDetail.lastLoginAt).toLocaleString('vi-VN')}
+          .col-md-6
+            h5.mb-3 Nhóm quyền
+            if roleList && roleList.length > 0
+              .mb-3
+                each role in roleList
+                  span.badge.bg-dark.me-2.mb-2.fs-6 #{role.name}
+              if roleList.length === 0
+                p.text-muted Chưa được gán nhóm quyền nào
+            else
+              p.text-muted Chưa được gán nhóm quyền nào
+      else
+        .alert.alert-warning Tài khoản không tồn tại!
+

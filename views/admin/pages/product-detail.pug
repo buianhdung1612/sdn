@@ -1,0 +1,181 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          if productDetail
+            small.text-muted #{productDetail.name} #{productDetail.version}
+        .col-auto
+          a.btn.btn-primary(href=`/${pathAdmin}/product/edit/${productDetail.id}`)
+            i.las.la-pen.me-1
+            | Chỉnh sửa
+          a.btn.btn-secondary.ms-2(href=`/${pathAdmin}/product/list`)
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      if productDetail
+        .row
+          .col-md-4
+            if productDetail.images && productDetail.images.length > 0
+              .mb-3
+                img.img-fluid.rounded(src=productDetail.images[0] alt=productDetail.name style="max-height: 400px; width: 100%; object-fit: cover;")
+                if productDetail.images.length > 1
+                  .row.mt-2
+                    each image, index in productDetail.images.slice(1, 5)
+                      .col-3
+                        img.img-fluid.rounded(src=image alt=`${productDetail.name} ${index + 2}` style="max-height: 80px; width: 100%; object-fit: cover; cursor: pointer;" onclick=`document.querySelector('.img-fluid').src='${image}'`)
+            else
+              .mb-3.text-center.p-5.bg-light.rounded
+                i.las.la-image.fs-48.text-muted
+                p.text-muted.mt-2 Chưa có hình ảnh
+          .col-md-8
+            .row.mb-3
+              .col-md-6
+                .mb-3
+                  label.form-label.text-muted.fw-bold Tên sản phẩm
+                  p.mb-0.fs-5 #{productDetail.name}
+              .col-md-6
+                .mb-3
+                  label.form-label.text-muted.fw-bold Phiên bản
+                  p.mb-0.fs-5 #{productDetail.version || '-'}
+            .row.mb-3
+              .col-md-6
+                .mb-3
+                  label.form-label.text-muted.fw-bold Đường dẫn (Slug)
+                  p.mb-0.text-break #{productDetail.slug || '-'}
+              .col-md-6
+                .mb-3
+                  label.form-label.text-muted.fw-bold Vị trí
+                  p.mb-0 #{productDetail.position || '-'}
+            .row.mb-3
+              .col-md-6
+                .mb-3
+                  label.form-label.text-muted.fw-bold Trạng thái
+                  if (productDetail.status === "draft")
+                    span.badge.bg-dark.fs-6 Bản nháp
+                  else if (productDetail.status === "active")
+                    span.badge.bg-success.fs-6 Hoạt động
+                  else if (productDetail.status === "inactive")
+                    span.badge.bg-danger.fs-6 Tạm dừng
+              .col-md-6
+                .mb-3
+                  label.form-label.text-muted.fw-bold Giá niêm yết
+                  p.mb-0.fs-5.text-primary
+                    if productDetail.basePrice
+                      | #{productDetail.basePrice.toLocaleString('vi-VN')} đ
+                    else
+                      | -
+        hr
+        .row.mb-3
+          .col-md-3
+            .mb-3
+              label.form-label.text-muted.fw-bold Quãng đường
+              p.mb-0
+                if productDetail.rangeKm
+                  | #{productDetail.rangeKm.toLocaleString('vi-VN')} km
+                else
+                  | -
+          .col-md-3
+            .mb-3
+              label.form-label.text-muted.fw-bold Dung lượng pin
+              p.mb-0
+                if productDetail.batteryKWh
+                  | #{productDetail.batteryKWh} kWh
+                else
+                  | -
+          .col-md-3
+            .mb-3
+              label.form-label.text-muted.fw-bold Công suất tối đa
+              p.mb-0
+                if productDetail.maxPowerHP
+                  | #{productDetail.maxPowerHP} HP
+                else
+                  | -
+          .col-md-3
+            .mb-3
+              label.form-label.text-muted.fw-bold Số biến thể
+              p.mb-0.fs-5.text-primary #{productDetail.variants ? productDetail.variants.length : 0}
+        if categories && categories.length > 0
+          .row.mb-3
+            .col-12
+              label.form-label.text-muted.fw-bold Danh mục
+              div
+                each category in categories
+                  span.badge.bg-info.me-2.mb-1 #{category.name}
+        if attributes && attributes.length > 0
+          .row.mb-3
+            .col-12
+              label.form-label.text-muted.fw-bold Thuộc tính
+              div
+                each attribute in attributes
+                  span.badge.bg-secondary.me-2.mb-1 #{attribute.name}
+        if productDetail.variants && productDetail.variants.length > 0
+          .row.mb-3
+            .col-12
+              label.form-label.text-muted.fw-bold.mb-3 Danh sách biến thể
+              .table-responsive
+                table.table.table-bordered.table-hover
+                  thead.table-light
+                    tr
+                      th STT
+                      th Trạng thái
+                      each attr in attributes
+                        th #{attr.name}
+                      th Giá cũ
+                      th Giá mới
+                      th Tồn kho
+                  tbody
+                    each variant, index in productDetail.variants
+                      tr
+                        td #{index + 1}
+                        td
+                          if variant.status === true
+                            span.badge.bg-success Hoạt động
+                          else
+                            span.badge.bg-secondary Tạm dừng
+                        each attr in attributes
+                          td
+                            if variant.attributeValue && variant.attributeValue.length > 0
+                              - const attrValue = variant.attributeValue.find(a => typeof a === 'object' && a.attributeId === attr.id)
+                              if attrValue
+                                | #{attrValue.label || attrValue.value || '-'}
+                              else
+                                | -
+                            else
+                              | -
+                        td
+                          if variant.oldPrice
+                            | #{variant.oldPrice.toLocaleString('vi-VN')} đ
+                          else
+                            | -
+                        td
+                          if variant.newPrice
+                            strong.text-success #{variant.newPrice.toLocaleString('vi-VN')} đ
+                          else
+                            | -
+                        td
+                          if variant.stock
+                            span.badge.bg-primary #{variant.stock.toLocaleString('vi-VN')} chiếc
+                          else
+                            | 0 chiếc
+        if productDetail.content
+          .row.mb-3
+            .col-12
+              label.form-label.text-muted.fw-bold.mb-3 Mô tả chi tiết
+              .border.rounded.p-3
+                | !{productDetail.content}
+        .row.mb-3
+          .col-md-6
+            .mb-3
+              label.form-label.text-muted.fw-bold Ngày tạo
+              p.mb-0 #{productDetail.createdAt ? new Date(productDetail.createdAt).toLocaleString('vi-VN') : '-'}
+          .col-md-6
+            .mb-3
+              label.form-label.text-muted.fw-bold Ngày cập nhật
+              p.mb-0 #{productDetail.updatedAt ? new Date(productDetail.updatedAt).toLocaleString('vi-VN') : '-'}
+      else
+        .alert.alert-warning Sản phẩm không tồn tại!
+

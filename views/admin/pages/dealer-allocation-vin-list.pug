@@ -9,26 +9,22 @@ block main
             .col
               h4.card-title #{pageTitle}
             .col-auto
-              a.btn.btn-primary(
-                href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/create`
-                )
-                i.fa-solid.fa-plus.me-1
-                | Thêm VIN
+              - const currentVinCount = vinList && vinList.length > 0 ? vinList.length : 0
+              - const isFull = currentVinCount >= allocation.quantity
+              if !isFull && allocation.status !== "cancelled"
+                a.btn.btn-primary(
+                  href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/create`
+                  )
+                  i.fa-solid.fa-plus.me-1
+                  | Thêm VIN
+              else if isFull
+                span.badge.bg-success.mt-2 Đã đủ #{allocation.quantity} VIN
               a.btn.btn-secondary.ms-2(
                 href=`/${pathAdmin}/dealer/allocation/list`
                 )
                 i.fa-solid.fa-arrow-left.me-1
                 | Quay lại
         .card-body.pt-0
-          .alert.alert-info.mb-3
-            strong Điều phối:
-            |  #{allocation.dealerId && allocation.dealerId.name ? allocation.dealerId.name : ''} (#{allocation.dealerId && allocation.dealerId.code ? allocation.dealerId.code : ''})
-            br
-            strong Sản phẩm:
-            |  #{allocation.productId && allocation.productId.name ? allocation.productId.name : ''} #{allocation.productId && allocation.productId.version ? allocation.productId.version : ''}
-            br
-            strong Số lượng:
-            |  #{allocation.quantity} chiếc
           .table-responsive
             table.table.table-striped.mb-0
               thead.table-light
@@ -53,5 +49,7 @@ block main
                   tr
                     td(colspan="3" class="text-center")
                       | Chưa có VIN nào.
-                      a(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/create`) Thêm VIN
+                      if allocation.status !== "cancelled"
+                        |  
+                        a(href=`/${pathAdmin}/dealer/allocation/${allocation.id}/vins/create`) Thêm VIN
 

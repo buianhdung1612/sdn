@@ -9,6 +9,8 @@ const upload = multer();
 
 router.get('/list', dealerController.list);
 
+router.get('/detail/:id', dealerController.detail);
+
 router.get('/create', dealerController.create);
 
 router.post(
@@ -28,6 +30,15 @@ router.patch(
 );
 
 router.patch('/delete/:id', dealerController.deletePatch);
+
+router.get('/payment/:id', dealerController.payment);
+
+router.post(
+    '/payment/:id',
+    upload.none(),
+    dealerValidate.paymentPost,
+    dealerController.paymentPost
+);
 
 export default router;
 

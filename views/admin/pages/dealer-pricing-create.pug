@@ -26,13 +26,18 @@ block main
                   select.form-select(id="productId" name="productId" required)
                     option(value="") -- Chọn sản phẩm --
                     each product in products
-                      option(value=product.id) #{product.name} - #{product.version}
+                      option(value=product._id ? product._id.toString() : product.id) #{product.name} - #{product.version}
               .col-md-6.col-lg-6
                 .mb-3
-                  label.form-label(for="variantIndex") Biến thể
-                  select.form-select(id="variantIndex" name="variantIndex")
-                    option(value="") Tất cả biến thể
+                  label.form-label(for="variantIndex") Biến thể *
+                  select.form-select(id="variantIndex" name="variantIndex" required)
+                    option(value="") -- Chọn biến thể --
                   small.text-muted Chọn sản phẩm trước để hiển thị danh sách biến thể
+              .col-md-6.col-lg-6
+                .mb-3
+                  label.form-label(for="listPrice") Giá niêm yết (đ)
+                  input.form-control(id="listPrice" type="number" readonly disabled)
+                  small.text-muted Giá niêm yết của biến thể đã chọn
               .col-md-6.col-lg-6
                 .mb-3
                   label.form-label(for="wholesalePrice") Giá sỉ (đ) *
@@ -40,11 +45,12 @@ block main
               .col-md-6.col-lg-6
                 .mb-3
                   label.form-label(for="effectiveDate") Ngày hiệu lực *
-                  input.form-control(id="effectiveDate" type="date" name="effectiveDate" required)
+                  - const today = new Date().toISOString().split('T')[0]
+                  input.form-control(id="effectiveDate" type="date" name="effectiveDate" min=today required)
               .col-md-6.col-lg-6
                 .mb-3
                   label.form-label(for="expiryDate") Ngày hết hạn
-                  input.form-control(id="expiryDate" type="date" name="expiryDate")
+                  input.form-control(id="expiryDate" type="date" name="expiryDate" min=today)
                   small.text-muted Để trống nếu không có hạn
               .col-md-6.col-lg-6
                 .mb-3
@@ -61,21 +67,108 @@ block main
             a.btn.btn-danger.ms-1(href=`/${pathAdmin}/dealer/${dealer.id}/pricing/list`) Hủy
 
   script.
+    const productsData = !{JSON.stringify(products)};
+    
+    // Convert _id to string for all products
+    const productsFormatted = productsData.map(p => ({
+      id: (p._id ? p._id.toString() : p.id),
+      name: p.name,
+      version: p.version,
+      variants: p.variants || []
+    }));
+    
     document.getElementById('productId').addEventListener('change', function() {
       const productId = this.value;
       const variantSelect = document.getElementById('variantIndex');
-      variantSelect.innerHTML = '<option value="">Tất cả biến thể</option>';
+      const listPriceInput = document.getElementById('listPrice');
+      variantSelect.innerHTML = '<option value="">-- Chọn biến thể --</option>';
+      listPriceInput.value = '';
       
       if (productId) {
-        const product = !{JSON.stringify(products)};
-        const selectedProduct = product.find(p => p.id === productId);
+        const selectedProduct = productsFormatted.find(p => p.id === productId);
+        console.log('Selected product:', selectedProduct);
         if (selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0) {
           selectedProduct.variants.forEach((variant, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = variant.attributeValue ? variant.attributeValue.join(', ') : `Biến thể ${index + 1}`;
-            variantSelect.appendChild(option);
+            // Chỉ hiển thị các biến thể có status === true
+            if (variant.status === true) {
+              const option = document.createElement('option');
+              option.value = index;
+              
+              // Xử lý attributeValue để lấy label
+              let variantLabel = `Biến thể ${index + 1}`;
+              if (variant.attributeValue && Array.isArray(variant.attributeValue)) {
+                const labels = variant.attributeValue.map(attr => {
+                  if (typeof attr === 'string') {
+                    return attr;
+                  } else if (attr && attr.label) {
+                    return attr.label;
+                  }
+                  return '';
+                }).filter(label => label !== '');
+                if (labels.length > 0) {
+                  variantLabel = labels.join(', ');
+                }
+              }
+              
+              const variantPrice = variant.priceNew || variant.priceOld || 0;
+              option.textContent = `${variantLabel} - ${variantPrice.toLocaleString('vi-VN')} đ`;
+              variantSelect.appendChild(option);
+            }
           });
+        } else {
+          console.log('No variants found for product:', selectedProduct);
+        }
+      }
+    });
+    
+    document.getElementById('variantIndex').addEventListener('change', function() {
+      const variantIndex = parseInt(this.value);
+      const listPriceInput = document.getElementById('listPrice');
+      const productId = document.getElementById('productId').value;
+      
+      if (productId && variantIndex !== null && !isNaN(variantIndex)) {
+        const selectedProduct = productsFormatted.find(p => p.id === productId);
+        if (selectedProduct && selectedProduct.variants && selectedProduct.variants[variantIndex]) {
+          const variant = selectedProduct.variants[variantIndex];
+          const variantPrice = variant.priceNew || variant.priceOld || 0;
+          listPriceInput.value = variantPrice;
+        }
+      } else {
+        listPriceInput.value = '';
+      }
+    });
+    
+    // Validation ngày hiệu lực và ngày hết hạn
+    const effectiveDateInput = document.getElementById('effectiveDate');
+    const expiryDateInput = document.getElementById('expiryDate');
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Set min date cho effectiveDate
+    effectiveDateInput.setAttribute('min', today);
+    
+    // Khi ngày hiệu lực thay đổi, cập nhật min date cho ngày hết hạn
+    effectiveDateInput.addEventListener('change', function() {
+      const effectiveDate = this.value;
+      if (effectiveDate) {
+        expiryDateInput.setAttribute('min', effectiveDate);
+        // Nếu ngày hết hạn hiện tại < ngày hiệu lực, xóa giá trị
+        if (expiryDateInput.value && expiryDateInput.value < effectiveDate) {
+          expiryDateInput.value = '';
+        }
+      } else {
+        expiryDateInput.setAttribute('min', today);
+      }
+    });
+    
+    // Khi ngày hết hạn thay đổi, validate
+    expiryDateInput.addEventListener('change', function() {
+      const expiryDate = this.value;
+      const effectiveDate = effectiveDateInput.value;
+      
+      if (expiryDate && effectiveDate) {
+        if (expiryDate < effectiveDate) {
+          alert('Ngày hết hạn phải lớn hơn hoặc bằng ngày hiệu lực!');
+          this.value = '';
         }
       }
     });

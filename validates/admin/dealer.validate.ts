@@ -44,3 +44,36 @@ export const createPost = (req: Request, res: Response, next: NextFunction) => {
     next();
 }
 
+export const paymentPost = (req: Request, res: Response, next: NextFunction) => {
+    const schema = Joi.object({
+        paymentAmount: Joi.string()
+            .required()
+            .custom((value, helpers) => {
+                const amount = parseFloat(value);
+                if (isNaN(amount) || amount <= 0) {
+                    return helpers.error("number.positive", { message: "Số tiền thanh toán phải lớn hơn 0!" });
+                }
+                return value;
+            })
+            .messages({
+                "string.empty": "Vui lòng nhập số tiền thanh toán!",
+                "number.positive": "Số tiền thanh toán phải lớn hơn 0!"
+            }),
+        paymentDescription: Joi.string().allow(''),
+    })
+
+    const { error } = schema.validate(req.body);
+
+    if (error) {
+        const errorMessage = error.details[0].message;
+
+        res.json({
+            code: "error",
+            message: errorMessage
+        })
+        return;
+    }
+
+    next();
+}
+

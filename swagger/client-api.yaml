@@ -37,10 +37,6 @@ components:
           type: string
           format: email
           description: Email
-        avatar:
-          type: string
-          nullable: true
-          description: URL avatar
         role:
           type: string
           description: Vai trò (quản lý đại lý hoặc nhân viên bán hàng)
@@ -270,7 +266,6 @@ paths:
                     id: "507f1f77bcf86cd799439011"
                     fullName: "Nguyễn Văn A"
                     email: "dealer@example.com"
-                    avatar: "/uploads/avatar.jpg"
                     role: "Quản lý đại lý"
                   dealer:
                     id: "507f1f77bcf86cd799439012"

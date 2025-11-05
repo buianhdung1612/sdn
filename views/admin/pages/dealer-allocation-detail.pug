@@ -1,0 +1,135 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          if allocation && allocation.dealerId
+            small.text-muted Đại lý: #{allocation.dealerId.name} (#{allocation.dealerId.code})
+        .col-auto
+          a.btn.btn-primary(href=`/${pathAdmin}/dealer/allocation/edit/${allocation._id ? allocation._id.toString() : allocation.id || ''}`)
+            i.las.la-pen.me-1
+            | Chỉnh sửa
+          a.btn.btn-secondary.ms-2(href=`/${pathAdmin}/dealer/allocation/list`)
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      if allocation
+        .row
+          .col-md-6
+            h5.mb-3 Thông tin điều phối
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Đại lý
+                if allocation.dealerId
+                  p.mb-0
+                    strong #{allocation.dealerId.name}
+                    br
+                    small.text-muted #{allocation.dealerId.code}
+                else
+                  | -
+              .col-md-6
+                label.form-label.text-muted.fw-bold Sản phẩm
+                if allocation.productId
+                  - const product = allocation.productId
+                  p.mb-0
+                    strong #{product.name}
+                    br
+                    small.text-muted #{product.version}
+                else
+                  | -
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Biến thể
+                if variantInfo && variantInfo.attributeValue
+                  div
+                    each attr in variantInfo.attributeValue
+                      span.badge.bg-info.me-1 #{attr.label}
+                else
+                  | -
+              .col-md-6
+                label.form-label.text-muted.fw-bold Số lượng
+                p.mb-0.fs-5.text-primary
+                  strong #{allocation.quantity ? allocation.quantity.toLocaleString('vi-VN') : '0'} chiếc
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Trạng thái
+                if (allocation.status === "pending")
+                  span.badge.bg-warning.fs-6 Chờ phân bổ
+                else if (allocation.status === "allocated")
+                  span.badge.bg-primary.fs-6 Đã phân bổ
+                else if (allocation.status === "shipped")
+                  span.badge.bg-info.fs-6 Đã giao hàng
+                else if (allocation.status === "delivered")
+                  span.badge.bg-success.fs-6 Đã nhận
+                else if (allocation.status === "cancelled")
+                  span.badge.bg-danger.fs-6 Đã hủy
+              .col-md-6
+                label.form-label.text-muted.fw-bold Số VIN
+                p.mb-0.fs-5
+                  if vinCount > 0
+                    a(href=`/${pathAdmin}/dealer/allocation/${allocation._id ? allocation._id.toString() : allocation.id || ''}/vins/list`)
+                      strong.text-primary #{vinCount} VIN
+                  else
+                    span.text-muted Chưa có VIN
+          .col-md-6
+            h5.mb-3 Thời gian
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Ngày tạo
+                p.mb-0 #{allocation.createdAt ? new Date(allocation.createdAt).toLocaleString('vi-VN') : '-'}
+              .col-md-6
+                label.form-label.text-muted.fw-bold Ngày cập nhật
+                p.mb-0 #{allocation.updatedAt ? new Date(allocation.updatedAt).toLocaleString('vi-VN') : '-'}
+            if allocation.allocatedAt
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Ngày phân bổ
+                  p.mb-0 #{new Date(allocation.allocatedAt).toLocaleString('vi-VN')}
+            if allocation.shippedAt
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Ngày giao hàng
+                  p.mb-0 #{new Date(allocation.shippedAt).toLocaleString('vi-VN')}
+            if allocation.deliveredAt
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Ngày nhận
+                  p.mb-0 #{new Date(allocation.deliveredAt).toLocaleString('vi-VN')}
+            if allocation.notes
+              .row.mb-3
+                .col-12
+                  label.form-label.text-muted.fw-bold Ghi chú
+                  p.mb-0 #{allocation.notes}
+        if allocation.vins && allocation.vins.length > 0
+          hr
+          .row
+            .col-12
+              h5.mb-3 Danh sách VIN (#{allocation.vins.length} VIN)
+              .table-responsive
+                table.table.table-bordered.table-hover
+                  thead.table-light
+                    tr
+                      th STT
+                      th Số khung (VIN)
+                      th Ngày tạo
+                      th Ghi chú
+                  tbody
+                    each vin, index in allocation.vins
+                      tr
+                        td #{index + 1}
+                        td
+                          strong.text-primary #{vin.vin}
+                        td #{vin.createdAt ? new Date(vin.createdAt).toLocaleDateString('vi-VN') : '-'}
+                        td #{vin.notes || '-'}
+        else
+          hr
+          .alert.alert-info.mb-0
+            i.las.la-info-circle.me-2
+            | Chưa có VIN nào được thêm vào điều phối này.
+            a.ms-2(href=`/${pathAdmin}/dealer/allocation/${allocation._id ? allocation._id.toString() : allocation.id || ''}/vins/create`) Thêm VIN
+      else
+        .alert.alert-warning Điều phối không tồn tại!
+

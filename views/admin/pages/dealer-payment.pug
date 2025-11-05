@@ -1,0 +1,208 @@
+extends ../layouts/default.pug
+
+block main
+  .row
+    .col-md-12
+      .card
+        .card-header
+          .row.align-items-center
+            .col
+              h4.card-title #{pageTitle}
+              small.text-muted Đại lý: #{dealer.name} (#{dealer.code})
+            .col-auto
+              a.btn.btn-secondary(
+                href=`/${pathAdmin}/dealer/list`
+              )
+                i.fa-solid.fa-arrow-left.me-1
+                | Quay lại
+        .card-body.pt-0
+          .row
+            .col-md-6
+              .card.border-info.mb-4
+                .card-header.bg-info.text-white
+                  h5.mb-0 Thông tin công nợ
+                .card-body
+                  .mb-3
+                    label.text-muted Công nợ hiện tại:
+                    h3.text-danger.mb-0
+                      strong #{currentDebt.toLocaleString('vi-VN')} đ
+                  .mb-3
+                    label.text-muted Hạn mức tín dụng:
+                    h5.mb-0
+                      strong #{creditLimit.toLocaleString('vi-VN')} đ
+                  if creditLimit > 0
+                    .mb-3
+                      label.text-muted Tỷ lệ sử dụng:
+                      - const usagePercent = currentDebt > 0 ? Math.min((currentDebt / creditLimit * 100), 100) : 0
+                      .progress(style="height: 25px;")
+                        .progress-bar(
+                          class=usagePercent >= 100 ? 'bg-danger' : usagePercent >= 80 ? 'bg-warning' : 'bg-success'
+                          role="progressbar"
+                          style=`width: ${usagePercent}%`
+                          aria-valuenow=usagePercent
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                        )
+                          strong #{usagePercent.toFixed(1)}%
+                    if usagePercent >= 100
+                      .alert.alert-danger.mb-0
+                        i.fa-solid.fa-exclamation-triangle.me-1
+                        | Công nợ đã vượt hạn mức tín dụng!
+                    else if usagePercent >= 80
+                      .alert.alert-warning.mb-0
+                        i.fa-solid.fa-exclamation-circle.me-1
+                        | Công nợ đã gần đạt hạn mức tín dụng!
+
+            .col-md-6
+              .card.border-primary.mb-4
+                .card-header.bg-primary.text-white
+                  h5.mb-0 Thanh toán công nợ
+                .card-body
+                  if currentDebt > 0
+                    form(id="paymentForm")
+                      .mb-3
+                        label.form-label(for="paymentAmount") Số tiền thanh toán (đ) *
+                        input.form-control(
+                          id="paymentAmount"
+                          type="number"
+                          name="paymentAmount"
+                          min="1"
+                          step="1"
+                          max=currentDebt
+                          required
+                          placeholder="Nhập số tiền thanh toán"
+                        )
+                        small.text-muted Tối đa: #{currentDebt.toLocaleString('vi-VN')} đ
+                      .mb-3
+                        label.form-label(for="paymentDescription") Ghi chú
+                        textarea.form-control(
+                          id="paymentDescription"
+                          name="paymentDescription"
+                          rows="3"
+                          placeholder="Ghi chú về khoản thanh toán này..."
+                        )
+                      button.btn.btn-primary(type="submit")
+                        i.fa-solid.fa-money-bill-wave.me-1
+                        | Xác nhận thanh toán
+                  else
+                    .alert.alert-success.mb-0
+                      i.fa-solid.fa-check-circle.me-1
+                      | Đại lý không có công nợ.
+
+          .row.mt-4
+            .col-md-12
+              .card
+                .card-header
+                  h5.mb-0 Lịch sử thanh toán
+                .card-body.pt-0
+                  if paymentHistory && paymentHistory.length > 0
+                    .table-responsive
+                      table.table.table-striped.mb-0
+                        thead.table-light
+                          tr
+                            th STT
+                            th Ngày giờ
+                            th Loại
+                            th Số tiền
+                            th Mô tả
+                        tbody
+                          each item, index in paymentHistory
+                            tr
+                              td #{index + 1}
+                              td
+                                - const paymentDate = new Date(item.date)
+                                | #{paymentDate.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              td
+                                if item.type === 'payment'
+                                  span.badge.bg-success
+                                    i.fa-solid.fa-money-bill-wave.me-1
+                                    | Thanh toán
+                                else if item.type === 'debt'
+                                  span.badge.bg-danger
+                                    i.fa-solid.fa-credit-card.me-1
+                                    | Công nợ
+                              td(class=item.type === 'payment' ? 'text-success' : 'text-danger')
+                                if item.type === 'payment'
+                                  | +#{item.amount.toLocaleString('vi-VN')} đ
+                                else
+                                  | -#{item.amount.toLocaleString('vi-VN')} đ
+                              td #{item.description || '-'}
+                  else
+                    .alert.alert-info.mb-0
+                      i.fa-solid.fa-info-circle.me-1
+                      | Chưa có lịch sử thanh toán nào.
+
+  script.
+    const paymentForm = document.getElementById('paymentForm');
+    const paymentAmountInput = document.getElementById('paymentAmount');
+    const currentDebt = #{currentDebt};
+
+    if (paymentForm && paymentAmountInput) {
+      paymentForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const paymentAmount = parseFloat(paymentAmountInput.value);
+        const paymentDescription = document.getElementById('paymentDescription').value;
+
+        if (!paymentAmount || paymentAmount <= 0) {
+          notyf.error('Vui lòng nhập số tiền thanh toán hợp lệ!');
+          return;
+        }
+
+        if (paymentAmount > currentDebt) {
+          notyf.error(`Số tiền thanh toán không được vượt quá công nợ hiện tại (${currentDebt.toLocaleString('vi-VN')} đ)!`);
+          return;
+        }
+
+        // Sử dụng Swal để xác nhận
+        Swal.fire({
+          title: 'Xác nhận thanh toán',
+          html: `Bạn có chắc muốn thanh toán <strong>${paymentAmount.toLocaleString('vi-VN')} đ</strong> cho đại lý này?`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Xác nhận',
+          cancelButtonText: 'Hủy',
+          confirmButtonColor: '#22c5ad',
+          cancelButtonColor: '#dc3545'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('paymentAmount', paymentAmount);
+            formData.append('paymentDescription', paymentDescription);
+
+            try {
+              const dealerId = '#{dealer._id ? dealer._id.toString() : dealer.id}';
+              const response = await fetch(`/${pathAdmin}/dealer/payment/${dealerId}`, {
+                method: 'POST',
+                body: formData
+              });
+
+              const data = await response.json();
+
+              if (data.code === 'success') {
+                notyf.success(data.message);
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              } else {
+                notyf.error(data.message || 'Có lỗi xảy ra!');
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              notyf.error('Có lỗi xảy ra khi thanh toán!');
+            }
+          }
+        });
+      });
+
+      // Format số tiền khi nhập
+      paymentAmountInput.addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        if (value > currentDebt) {
+          this.setCustomValidity(`Số tiền không được vượt quá ${currentDebt.toLocaleString('vi-VN')} đ`);
+        } else {
+          this.setCustomValidity('');
+        }
+      });
+    }
+

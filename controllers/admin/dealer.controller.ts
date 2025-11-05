@@ -185,6 +185,70 @@ export const createPost = async (req: Request, res: Response) => {
     }
 }
 
+export const detail = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const dealerDetail = await Dealer.findOne({
+            _id: id,
+            deleted: false
+        })
+
+        if (!dealerDetail) {
+            res.redirect(`/${pathAdmin}/dealer/list`);
+            return;
+        }
+
+        // Lấy thông tin tài khoản liên kết
+        let accountInfo: any = null;
+        if (dealerDetail.accountId) {
+            const accountDoc = await AccountAdmin.findOne({
+                _id: dealerDetail.accountId,
+                deleted: false
+            }).select('fullName email status roles').lean();
+            
+            if (accountDoc) {
+                const Role = (await import('../../models/role.model')).default;
+                const roleList = await Role.find({
+                    _id: { $in: accountDoc.roles }
+                });
+                accountInfo = {
+                    ...accountDoc,
+                    rolesName: roleList.map(r => r.name)
+                };
+            }
+        }
+
+        // Tính tổng số điều phối
+        const DealerAllocation = (await import('../../models/dealer-allocation.model')).default;
+        const allocationStats = await DealerAllocation.aggregate([
+            {
+                $match: {
+                    dealerId: dealerDetail._id.toString(),
+                    deleted: false
+                }
+            },
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 },
+                    totalQuantity: { $sum: '$quantity' }
+                }
+            }
+        ]);
+
+        res.render('admin/pages/dealer-detail', {
+            pageTitle: "Chi tiết đại lý",
+            dealerDetail: dealerDetail,
+            accountInfo: accountInfo,
+            allocationStats: allocationStats
+        });
+    } catch (error) {
+        console.log(error);
+        res.redirect(`/${pathAdmin}/dealer/list`);
+    }
+}
+
 export const edit = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
@@ -361,6 +425,126 @@ export const deletePatch = async (req: Request, res: Response) => {
             code: "error",
             message: "Id không hợp lệ!"
         })
+    }
+}
+
+export const payment = async (req: Request, res: Response) => {
+    try {
+        const dealerId = req.params.id;
+
+        const dealer = await Dealer.findOne({
+            _id: dealerId,
+            deleted: false
+        });
+
+        if (!dealer) {
+            res.redirect(`/${pathAdmin}/dealer/list`);
+            return;
+        }
+
+        // Lấy lịch sử thanh toán, sắp xếp theo ngày giảm dần
+        const paymentHistory = dealer.debt?.paymentHistory || [];
+        const sortedPaymentHistory = [...paymentHistory].sort((a: any, b: any) => {
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
+
+        res.render('admin/pages/dealer-payment', {
+            pageTitle: "Thanh toán công nợ",
+            dealer: dealer,
+            paymentHistory: sortedPaymentHistory,
+            currentDebt: dealer.debt?.currentDebt || 0,
+            creditLimit: dealer.debt?.creditLimit || 0
+        });
+    } catch (error) {
+        console.log(error);
+        res.redirect(`/${pathAdmin}/dealer/list`);
+    }
+}
+
+export const paymentPost = async (req: Request, res: Response) => {
+    try {
+        const dealerId = req.params.id;
+        const paymentAmount = parseFloat(req.body.paymentAmount) || 0;
+        const paymentDescription = req.body.paymentDescription || '';
+
+        if (paymentAmount <= 0) {
+            res.json({
+                code: "error",
+                message: "Số tiền thanh toán phải lớn hơn 0!"
+            });
+            return;
+        }
+
+        const dealer = await Dealer.findOne({
+            _id: dealerId,
+            deleted: false
+        });
+
+        if (!dealer) {
+            res.json({
+                code: "error",
+                message: "Đại lý không tồn tại!"
+            });
+            return;
+        }
+
+        const currentDebt = dealer.debt?.currentDebt || 0;
+
+        if (paymentAmount > currentDebt) {
+            res.json({
+                code: "error",
+                message: `Số tiền thanh toán (${paymentAmount.toLocaleString('vi-VN')} đ) vượt quá công nợ hiện tại (${currentDebt.toLocaleString('vi-VN')} đ)!`
+            });
+            return;
+        }
+
+        const newDebt = currentDebt - paymentAmount;
+
+        // Đảm bảo debt object tồn tại
+        if (!dealer.debt) {
+            await Dealer.updateOne(
+                { _id: dealerId },
+                {
+                    $set: {
+                        'debt': {
+                            currentDebt: 0,
+                            creditLimit: 0,
+                            paymentHistory: []
+                        }
+                    }
+                }
+            );
+        }
+
+        // Cập nhật công nợ và paymentHistory bằng $set và $push
+        await Dealer.updateOne(
+            { _id: dealerId },
+            {
+                $set: {
+                    'debt.currentDebt': newDebt
+                },
+                $push: {
+                    'debt.paymentHistory': {
+                        date: new Date(),
+                        amount: paymentAmount,
+                        type: "payment",
+                        description: paymentDescription || `Thanh toán công nợ: ${paymentAmount.toLocaleString('vi-VN')} đ`
+                    }
+                }
+            }
+        );
+
+        res.json({
+            code: "success",
+            message: "Thanh toán công nợ thành công!",
+            newDebt: newDebt
+        });
+    } catch (error) {
+        console.log(error);
+        res.json({
+            code: "error",
+            message: "Dữ liệu không hợp lệ!"
+        });
     }
 }
 

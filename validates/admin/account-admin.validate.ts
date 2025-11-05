@@ -46,7 +46,6 @@ export const createPost = (req: Request, res: Response, next: NextFunction) => {
                 "password.special": "Mật khẩu phải chứa ít nhất một ký tự đặc biệt!",
             }),
         status: Joi.string().allow(''),
-        avatar: Joi.string().allow(''),
         roles: Joi.string().allow(''),
     });
 
@@ -84,7 +83,6 @@ export const editPatch = (req: Request, res: Response, next: NextFunction) => {
                 "string.email": "Email không đúng định dạng!"
             }),
         status: Joi.string().allow(''),
-        avatar: Joi.string().allow(''),
         roles: Joi.string().allow(''),
     });
 

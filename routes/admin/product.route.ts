@@ -47,6 +47,8 @@ router.post(
 
 router.get('/list', productController.list);
 
+router.get('/detail/:id', productController.detail);
+
 router.get('/edit/:id', productController.edit);
 
 router.patch(

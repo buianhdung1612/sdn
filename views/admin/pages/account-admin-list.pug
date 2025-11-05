@@ -4,7 +4,7 @@ include ../mixins/form-search.pug
 
 block main
   - const modelName = "tài khoản";
-  - const headers = ["STT", "Ảnh đại diện", "Họ tên", "Email", "Nhóm quyền", "Trạng thái", "Hành động"]
+  - const headers = ["STT", "Họ tên", "Email", "Nhóm quyền", "Trạng thái", "Hành động"]
 
   .row
     .col-12
@@ -38,11 +38,6 @@ block main
                 each item, index in recordList
                   tr
                     td #{pagination.skip + index + 1}
-                    td
-                      img(
-                        src=item.avatar
-                        class="rounded thumb-lg me-1 d-inline"
-                      )
                     td #{item.fullName}
                     td #{item.email}
                     td(style="max-width: 200px;")
@@ -56,15 +51,19 @@ block main
                       else if(item.status === "inactive")
                         span.badge.bg-danger Tạm dừng
                     td.text-end
-                      a(href=`/${pathAdmin}/account-admin/edit/${item.id}`)
+                      a(href=`/${pathAdmin}/account-admin/detail/${item.id}` title="Xem chi tiết")
+                        i.las.la-eye.text-info.font-16
+                      a(href=`/${pathAdmin}/account-admin/edit/${item.id}` title="Chỉnh sửa" style="margin-left: 8px;")
                         i.las.la-pen.text-secondary.font-16
-                      a(href=`/${pathAdmin}/account-admin/change-password/${item.id}`)
+                      a(href=`/${pathAdmin}/account-admin/change-password/${item.id}` title="Đổi mật khẩu" style="margin-left: 8px;")
                         i.las.la-key.text-secondary.font-16
                       a(
                         href="javascript:;"
                         button-api=`delete-${modelName}`
                         data-method="PATCH"
                         data-api=`/${pathAdmin}/account-admin/delete/${item.id}`
+                        title="Xóa"
+                        style="margin-left: 8px;"
                       )
                         i.las.la-trash-alt.text-secondary.font-16      
           +pagination()

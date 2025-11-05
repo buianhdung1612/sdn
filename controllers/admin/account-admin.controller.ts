@@ -115,6 +115,35 @@ export const list = async (req: Request, res: Response) => {
     });
 }
 
+export const detail = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const accountDetail = await AccountAdmin.findOne({
+            _id: id,
+            deleted: false
+        })
+
+        if (!accountDetail) {
+            res.redirect(`/${pathAdmin}/account-admin/list`);
+            return;
+        }
+
+        // Lấy thông tin roles
+        const roleList = await Role.find({
+            _id: { $in: accountDetail.roles }
+        });
+
+        res.render("admin/pages/account-admin-detail", {
+            pageTitle: "Chi tiết tài khoản quản trị",
+            accountDetail: accountDetail,
+            roleList: roleList
+        });
+    } catch (error) {
+        res.redirect(`/${pathAdmin}/account-admin/list`);
+    }
+}
+
 export const edit = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;

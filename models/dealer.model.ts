@@ -1,5 +1,42 @@
 import mongoose from "mongoose";
 
+// Schema cho payment history entry
+const paymentHistorySchema = new mongoose.Schema({
+    date: {
+        type: Date,
+        required: true
+    },
+    amount: {
+        type: Number,
+        required: true
+    },
+    type: {
+        type: String,
+        enum: ["payment", "debt"],
+        required: true
+    },
+    description: {
+        type: String,
+        default: ""
+    }
+}, { _id: false });
+
+// Schema cho debt
+const debtSchema = new mongoose.Schema({
+    currentDebt: {
+        type: Number,
+        default: 0
+    },
+    creditLimit: {
+        type: Number,
+        default: 0
+    },
+    paymentHistory: {
+        type: [paymentHistorySchema],
+        default: []
+    }
+}, { _id: false });
+
 const schema = new mongoose.Schema(
     {
         name: String,
@@ -15,16 +52,7 @@ const schema = new mongoose.Schema(
             contractType: String, // Loại hợp đồng
             description: String // Mô tả hợp đồng
         },
-        debt: {
-            currentDebt: Number, // Công nợ hiện tại
-            creditLimit: Number, // Hạn mức tín dụng
-            paymentHistory: [{
-                date: Date,
-                amount: Number,
-                type: String, // "payment" hoặc "debt"
-                description: String
-            }]
-        },
+        debt: debtSchema,
         accountId: String, // ID tài khoản đại lý trên hệ thống
         status: {
             type: String,

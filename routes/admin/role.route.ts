@@ -17,6 +17,8 @@ router.post(
 
 router.get('/list', roleController.list);
 
+router.get('/detail/:id', roleController.detail);
+
 router.get('/edit/:id', roleController.edit);
 router.patch(
     '/edit/:id',

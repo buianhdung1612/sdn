@@ -65,13 +65,17 @@ block main
                       else if (item.status == "inactive")
                         span(class="badge bg-danger") Tạm dừng
                     td.text-end
-                      a(href=`/${pathAdmin}/product/edit/${item.id}`)
+                      a(href=`/${pathAdmin}/product/detail/${item.id}` title="Xem chi tiết")
+                        i.las.la-eye.text-info.font-16
+                      a(href=`/${pathAdmin}/product/edit/${item.id}` title="Chỉnh sửa" style="margin-left: 8px;")
                         i.las.la-pen.text-secondary.fs-20
                       a(
                         href="javascript:;"
                         button-api
                         data-method="PATCH"
                         data-api=`/${pathAdmin}/product/delete/${item.id}`
+                        title="Xóa"
+                        style="margin-left: 8px;"
                       )
                         i.las.la-trash-alt.text-secondary.fs-20
           +pagination()

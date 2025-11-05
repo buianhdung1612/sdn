@@ -1,0 +1,57 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          if roleDetail
+            small.text-muted #{roleDetail.name}
+        .col-auto
+          a.btn.btn-primary(href=`/${pathAdmin}/role/edit/${roleDetail.id}`)
+            i.las.la-pen.me-1
+            | Chỉnh sửa
+          a.btn.btn-secondary.ms-2(href=`/${pathAdmin}/role/list`)
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      if roleDetail
+        .row
+          .col-md-6
+            h5.mb-3 Thông tin nhóm quyền
+            .row.mb-3
+              .col-12
+                label.form-label.text-muted.fw-bold Tên nhóm quyền
+                p.mb-0.fs-5 #{roleDetail.name}
+            .row.mb-3
+              .col-12
+                label.form-label.text-muted.fw-bold Mô tả
+                p.mb-0 #{roleDetail.description || '-'}
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Trạng thái
+                if (roleDetail.status === "active")
+                  span.badge.bg-success.fs-6 Hoạt động
+                else if (roleDetail.status === "inactive")
+                  span.badge.bg-danger.fs-6 Tạm dừng
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Ngày tạo
+                p.mb-0 #{roleDetail.createdAt ? new Date(roleDetail.createdAt).toLocaleString('vi-VN') : '-'}
+              .col-md-6
+                label.form-label.text-muted.fw-bold Ngày cập nhật
+                p.mb-0 #{roleDetail.updatedAt ? new Date(roleDetail.updatedAt).toLocaleString('vi-VN') : '-'}
+          .col-md-6
+            h5.mb-3 Danh sách quyền (#{permissionNames ? permissionNames.length : 0} quyền)
+            if permissionNames && permissionNames.length > 0
+              .border.rounded.p-3(style="max-height: 400px; overflow-y: auto;")
+                each permName in permissionNames
+                  .mb-2
+                    i.las.la-check-circle.text-success.me-2
+                    | #{permName}
+            else
+              p.text-muted Chưa có quyền nào được gán
+      else
+        .alert.alert-warning Nhóm quyền không tồn tại!
+

@@ -8,6 +8,7 @@ const upload = multer();
 
 router.get('/list', dealerAllocationController.list);
 router.get('/create', dealerAllocationController.create);
+router.get('/detail/:id', dealerAllocationController.detail);
 router.post(
     '/create',
     upload.none(),

@@ -41,7 +41,21 @@ export const loginPost = async (req: Request, res: Response) => {
             });
         }
 
-        // Kiểm tra role: chỉ cho phép "quản lý đại lý" hoặc "nhân viên bán hàng"
+        // Helper function để kiểm tra role có liên quan đến đại lý không
+        const isDealerRole = (roleName: string): boolean => {
+            const roleNameLower = roleName.toLowerCase();
+            return roleNameLower.includes("quản lý đại lý") || 
+                   roleNameLower.includes("quan ly dai ly") ||
+                   roleNameLower.includes("dealer manager") ||
+                   roleNameLower.includes("nhân viên bán hàng") ||
+                   roleNameLower.includes("nhan vien ban hang") ||
+                   roleNameLower.includes("sales staff") ||
+                   roleNameLower.includes("sales") ||
+                   roleNameLower.includes("đại lý") ||
+                   roleNameLower.includes("dai ly");
+        };
+
+        // Kiểm tra role: chỉ cho phép các role liên quan đến đại lý
         let allowedRole = false;
         let userRole = "";
         
@@ -52,31 +66,24 @@ export const loginPost = async (req: Request, res: Response) => {
                 status: "active"
             });
 
-            if (roleInfo) {
-                const roleName = roleInfo.name?.toLowerCase() || "";
-                // Kiểm tra role name có chứa từ khóa "quản lý đại lý" hoặc "nhân viên bán hàng"
-                if (roleName.includes("quản lý đại lý") || 
-                    roleName.includes("quan ly dai ly") ||
-                    roleName.includes("dealer manager") ||
-                    roleName.includes("nhân viên bán hàng") ||
-                    roleName.includes("nhan vien ban hang") ||
-                    roleName.includes("sales staff") ||
-                    roleName.includes("sales")) {
+            if (roleInfo && roleInfo.name) {
+                if (isDealerRole(roleInfo.name)) {
                     allowedRole = true;
-                    userRole = roleInfo.name || "";
+                    userRole = roleInfo.name;
                     break;
                 }
             }
         }
 
+        // Điều kiện 1: Phải có role tương ứng với đại lý
         if (!allowedRole) {
             return res.status(403).json({
                 success: false,
-                message: "Bạn không có quyền truy cập ứng dụng này!"
+                message: "Bạn không có quyền truy cập ứng dụng này! Tài khoản phải có role liên quan đến đại lý."
             });
         }
 
-        // Tìm đại lý tương ứng với account
+        // Điều kiện 2: Kiểm tra tài khoản có được liên kết với dealer không và dealer phải active
         const dealer = await Dealer.findOne({
             accountId: existAccount._id.toString(),
             deleted: false,
@@ -86,9 +93,12 @@ export const loginPost = async (req: Request, res: Response) => {
         if (!dealer) {
             return res.status(403).json({
                 success: false,
-                message: "Không tìm thấy thông tin đại lý!"
+                message: "Tài khoản này chưa được liên kết với đại lý hoặc đại lý đã bị khóa!"
             });
         }
+
+        // Điều kiện 3: Tài khoản phải active (đã kiểm tra ở trên)
+        // Tất cả điều kiện đã thỏa mãn, cho phép đăng nhập
 
         // Tạo JWT Token
         const token = jwt.sign(
@@ -120,7 +130,6 @@ export const loginPost = async (req: Request, res: Response) => {
                     id: existAccount._id.toString(),
                     fullName: existAccount.fullName,
                     email: existAccount.email,
-                    avatar: existAccount.avatar,
                     role: userRole,
                     dealer: {
                         id: dealer._id.toString(),

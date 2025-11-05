@@ -43,10 +43,14 @@ export const list = async (req: Request, res: Response) => {
         };
 
         const pricingList: any = await DealerPricing.find(find)
-            .populate('productId', 'name version basePrice')
+            .populate({
+                path: 'productId',
+                select: 'name version basePrice variants'
+            })
             .limit(limitItems)
             .skip(skip)
-            .sort({ createdAt: "desc" });
+            .sort({ createdAt: "desc" })
+            .lean(); // Use lean() để convert thành plain JavaScript objects
 
         res.render("admin/pages/dealer-pricing-list", {
             pageTitle: `Quản lý giá sỉ - ${dealer.name}`,
@@ -76,7 +80,8 @@ export const create = async (req: Request, res: Response) => {
 
         const products = await Product.find({ deleted: false, status: "active" })
             .select('name version basePrice variants')
-            .sort({ name: 1 });
+            .sort({ name: 1 })
+            .lean(); // Use lean() để convert thành plain JavaScript objects
 
         res.render('admin/pages/dealer-pricing-create', {
             pageTitle: "Thêm giá sỉ",
@@ -93,10 +98,60 @@ export const createPost = async (req: Request, res: Response) => {
     try {
         const dealerId = req.params.dealerId;
         const productId = req.body.productId;
-        const variantIndex = req.body.variantIndex !== '' ? parseInt(req.body.variantIndex) : null;
+        const variantIndexStr = req.body.variantIndex;
+        
+        if (!variantIndexStr || variantIndexStr === '') {
+            res.json({
+                code: "error",
+                message: "Vui lòng chọn biến thể!"
+            });
+            return;
+        }
+        
+        const variantIndex = parseInt(variantIndexStr);
+        if (isNaN(variantIndex)) {
+            res.json({
+                code: "error",
+                message: "Biến thể không hợp lệ!"
+            });
+            return;
+        }
+        
         const wholesalePrice = parseFloat(req.body.wholesalePrice) || 0;
         const effectiveDate = req.body.effectiveDate ? new Date(req.body.effectiveDate) : new Date();
         const expiryDate = req.body.expiryDate ? new Date(req.body.expiryDate) : null;
+
+        // Validate ngày hiệu lực không được trong quá khứ
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        effectiveDate.setHours(0, 0, 0, 0);
+        
+        if (effectiveDate < today) {
+            res.json({
+                code: "error",
+                message: "Ngày hiệu lực không được trong quá khứ!"
+            });
+            return;
+        }
+
+        // Validate ngày hết hạn phải >= ngày hiệu lực
+        if (expiryDate) {
+            expiryDate.setHours(0, 0, 0, 0);
+            if (expiryDate < today) {
+                res.json({
+                    code: "error",
+                    message: "Ngày hết hạn không được trong quá khứ!"
+                });
+                return;
+            }
+            if (expiryDate < effectiveDate) {
+                res.json({
+                    code: "error",
+                    message: "Ngày hết hạn phải lớn hơn hoặc bằng ngày hiệu lực!"
+                });
+                return;
+            }
+        }
 
         const dealer = await Dealer.findOne({
             _id: dealerId,
@@ -124,7 +179,7 @@ export const createPost = async (req: Request, res: Response) => {
             return;
         }
 
-        if (variantIndex !== null && (!product.variants || !product.variants[variantIndex])) {
+        if (!product.variants || !product.variants[variantIndex]) {
             res.json({
                 code: "error",
                 message: "Biến thể không tồn tại!"
@@ -196,7 +251,11 @@ export const edit = async (req: Request, res: Response) => {
             dealerId: dealerId,
             deleted: false
         })
-        .populate('productId', 'name version basePrice variants');
+        .populate({
+            path: 'productId',
+            select: 'name version basePrice variants'
+        })
+        .lean(); // Use lean() để convert thành plain JavaScript objects
 
         if (!pricing) {
             res.redirect(`/${pathAdmin}/dealer/${dealerId}/pricing/list`);
@@ -205,12 +264,19 @@ export const edit = async (req: Request, res: Response) => {
 
         const products = await Product.find({ deleted: false, status: "active" })
             .select('name version basePrice variants')
-            .sort({ name: 1 });
+            .sort({ name: 1 })
+            .lean(); // Use lean() để convert thành plain JavaScript objects
+
+        // Convert _id thành id cho pricing để tương thích với template
+        const pricingFormatted = {
+            ...pricing,
+            id: (pricing as any)._id ? (pricing as any)._id.toString() : (pricing as any).id || ''
+        };
 
         res.render('admin/pages/dealer-pricing-edit', {
             pageTitle: "Chỉnh sửa giá sỉ",
             dealer: dealer,
-            pricing: pricing,
+            pricing: pricingFormatted,
             products: products
         });
     } catch (error) {
@@ -242,9 +308,49 @@ export const editPatch = async (req: Request, res: Response) => {
         const effectiveDate = req.body.effectiveDate ? new Date(req.body.effectiveDate) : new Date();
         const expiryDate = req.body.expiryDate ? new Date(req.body.expiryDate) : null;
 
+        // Validate ngày hiệu lực không được trong quá khứ
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        effectiveDate.setHours(0, 0, 0, 0);
+        
+        if (effectiveDate < today) {
+            res.json({
+                code: "error",
+                message: "Ngày hiệu lực không được trong quá khứ!"
+            });
+            return;
+        }
+
+        // Validate ngày hết hạn phải >= ngày hiệu lực
+        if (expiryDate) {
+            expiryDate.setHours(0, 0, 0, 0);
+            if (expiryDate < today) {
+                res.json({
+                    code: "error",
+                    message: "Ngày hết hạn không được trong quá khứ!"
+                });
+                return;
+            }
+            if (expiryDate < effectiveDate) {
+                res.json({
+                    code: "error",
+                    message: "Ngày hết hạn phải lớn hơn hoặc bằng ngày hiệu lực!"
+                });
+                return;
+            }
+        }
+
         // Kiểm tra giá sỉ trùng lặp (trừ chính record này)
-        if (req.body.productId && req.body.variantIndex !== undefined) {
-            const variantIndex = req.body.variantIndex !== '' ? parseInt(req.body.variantIndex) : null;
+        if (req.body.productId && req.body.variantIndex !== undefined && req.body.variantIndex !== '') {
+            const variantIndex = parseInt(req.body.variantIndex);
+            if (isNaN(variantIndex)) {
+                res.json({
+                    code: "error",
+                    message: "Biến thể không hợp lệ!"
+                });
+                return;
+            }
+            
             const existingPricing = await DealerPricing.findOne({
                 _id: { $ne: pricingId },
                 dealerId: dealerId,
@@ -263,11 +369,7 @@ export const editPatch = async (req: Request, res: Response) => {
             }
 
             pricing.productId = new mongoose.Types.ObjectId(req.body.productId);
-            if (variantIndex !== null) {
-                pricing.variantIndex = variantIndex;
-            } else {
-                (pricing as any).variantIndex = null;
-            }
+            pricing.variantIndex = variantIndex;
         }
 
         pricing.wholesalePrice = wholesalePrice;

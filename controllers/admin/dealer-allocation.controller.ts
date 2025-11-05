@@ -4,6 +4,7 @@ import Dealer from '../../models/dealer.model';
 import Product from '../../models/product.model';
 import DealerAllocation from '../../models/dealer-allocation.model';
 import DealerInventory from '../../models/dealer-inventory.model';
+import DealerPricing from '../../models/dealer-pricing.model';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -140,6 +141,18 @@ export const createPost = async (req: Request, res: Response) => {
             return;
         }
 
+        // Kiểm tra công nợ và hạn mức tín dụng trước khi tạo điều phối
+        const currentDebt = dealer.debt?.currentDebt || 0;
+        const creditLimit = dealer.debt?.creditLimit || 0;
+        
+        if (creditLimit > 0 && currentDebt >= creditLimit) {
+            res.json({
+                code: "error",
+                message: `Công nợ hiện tại đã vượt hạn mức tín dụng! Công nợ: ${currentDebt.toLocaleString('vi-VN')} đ, Hạn mức: ${creditLimit.toLocaleString('vi-VN')} đ. Vui lòng thanh toán nợ cũ trước khi tạo điều phối mới.`
+            });
+            return;
+        }
+
         // Kiểm tra sản phẩm và variant
         const product = await Product.findOne({
             _id: productId,
@@ -233,6 +246,45 @@ export const createPost = async (req: Request, res: Response) => {
     }
 };
 
+export const detail = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const allocation = await DealerAllocation.findOne({
+            _id: id,
+            deleted: false
+        })
+        .populate('dealerId', 'name code')
+        .populate('productId', 'name version variants')
+        .lean();
+
+        if (!allocation) {
+            res.redirect(`/${pathAdmin}/dealer/allocation/list`);
+            return;
+        }
+
+        // Lấy thông tin variant
+        const product = allocation.productId as any;
+        let variantInfo = null;
+        if (product && product.variants && product.variants[(allocation as any).variantIndex]) {
+            variantInfo = product.variants[(allocation as any).variantIndex];
+        }
+
+        // Đếm số VIN
+        const vinCount = ((allocation as any).vins || []).length;
+
+        res.render('admin/pages/dealer-allocation-detail', {
+            pageTitle: "Chi tiết điều phối xe",
+            allocation: allocation,
+            variantInfo: variantInfo,
+            vinCount: vinCount
+        });
+    } catch (error) {
+        console.log(error);
+        res.redirect(`/${pathAdmin}/dealer/allocation/list`);
+    }
+};
+
 export const edit = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
@@ -291,6 +343,104 @@ export const editPatch = async (req: Request, res: Response) => {
 
         const quantity = parseInt(req.body.quantity) || 0;
         const status = req.body.status;
+        const oldStatus = allocation.status;
+
+        // KIỂM TRA: Nếu chưa có VIN thì không cho phép đổi trạng thái từ "pending" sang các trạng thái khác
+        const vinCount = (allocation.vins || []).length;
+        if (oldStatus === "pending" && status !== "pending" && status !== "cancelled" && vinCount === 0) {
+            res.json({
+                code: "error",
+                message: "Vui lòng thêm VIN trước khi đổi trạng thái! Chưa có VIN nào được thêm vào điều phối này."
+            });
+            return;
+        }
+
+        // KHÔNG CHO PHÉP chuyển từ "delivered" sang bất cứ trạng thái nào khác
+        if (oldStatus === "delivered" && status !== "delivered") {
+            res.json({
+                code: "error",
+                message: "Không thể thay đổi trạng thái của điều phối đã nhận! Đại lý đã nhận hàng, không thể đổi lại."
+            });
+            return;
+        }
+
+        // KHÔNG CHO PHÉP chuyển từ "cancelled" sang bất cứ trạng thái nào khác
+        if (oldStatus === "cancelled" && status !== "cancelled") {
+            res.json({
+                code: "error",
+                message: "Không thể thay đổi trạng thái của điều phối đã hủy!"
+            });
+            return;
+        }
+
+        // Kiểm tra công nợ và hạn mức khi chuyển sang "delivered"
+        if (oldStatus !== "delivered" && status === "delivered") {
+            const dealer = await Dealer.findById(allocation.dealerId);
+            if (dealer) {
+                const currentDebt = dealer.debt?.currentDebt || 0;
+                const creditLimit = dealer.debt?.creditLimit || 0;
+                
+                // Tính giá trị đơn hàng này (cần tìm giá sỉ)
+                const now = new Date();
+                // Tìm giá sỉ cho variant cụ thể trước, nếu không có thì tìm giá sỉ cho tất cả variants
+                let pricing = await DealerPricing.findOne({
+                    dealerId: allocation.dealerId,
+                    productId: allocation.productId,
+                    variantIndex: allocation.variantIndex, // Tìm variant cụ thể trước
+                    status: "active",
+                    effectiveDate: { $lte: now },
+                    $and: [
+                        {
+                            $or: [
+                                { expiryDate: null },
+                                { expiryDate: { $gte: now } }
+                            ]
+                        }
+                    ],
+                    deleted: false
+                });
+
+                // Nếu không tìm thấy giá sỉ cho variant cụ thể, tìm giá sỉ cho tất cả variants (variantIndex = null)
+                if (!pricing) {
+                    pricing = await DealerPricing.findOne({
+                        dealerId: allocation.dealerId,
+                        productId: allocation.productId,
+                        variantIndex: null, // Tìm giá sỉ cho tất cả variants
+                        status: "active",
+                        effectiveDate: { $lte: now },
+                        $and: [
+                            {
+                                $or: [
+                                    { expiryDate: null },
+                                    { expiryDate: { $gte: now } }
+                                ]
+                            }
+                        ],
+                        deleted: false
+                    });
+                }
+
+                if (!pricing) {
+                    res.json({
+                        code: "error",
+                        message: "Không tìm thấy giá sỉ cho sản phẩm này! Vui lòng thiết lập giá sỉ trước."
+                    });
+                    return;
+                }
+
+                const wholesalePrice = pricing.wholesalePrice || 0;
+                const orderValue = wholesalePrice * quantity;
+                const newDebt = currentDebt + orderValue;
+
+                if (creditLimit > 0 && newDebt > creditLimit) {
+                    res.json({
+                        code: "error",
+                        message: `Công nợ sẽ vượt hạn mức tín dụng! Công nợ hiện tại: ${currentDebt.toLocaleString('vi-VN')} đ, Giá trị đơn hàng: ${orderValue.toLocaleString('vi-VN')} đ, Công nợ sau khi nhận: ${newDebt.toLocaleString('vi-VN')} đ, Hạn mức: ${creditLimit.toLocaleString('vi-VN')} đ. Vui lòng thanh toán nợ cũ trước.`
+                    });
+                    return;
+                }
+            }
+        }
 
         // Nếu đang cập nhật số lượng, kiểm tra tồn kho
         if (quantity !== allocation.quantity && status !== "cancelled") {
@@ -335,7 +485,6 @@ export const editPatch = async (req: Request, res: Response) => {
         if (product && product.variants && product.variants[allocation.variantIndex]) {
             const variant = product.variants[allocation.variantIndex];
             const currentStock = variant.stock || 0;
-            const oldStatus = allocation.status;
             const oldQuantity = allocation.quantity;
             const quantityDiff = quantity - oldQuantity;
             const statusChanged = oldStatus !== status;
@@ -358,18 +507,6 @@ export const editPatch = async (req: Request, res: Response) => {
                 // Chuyển từ "pending" sang "cancelled": Hoàn tồn kho EVM Stock (đã trừ khi tạo)
                 else if (oldStatus === "pending" && status === "cancelled") {
                     const newStock = currentStock + oldQuantity; // Hoàn theo số lượng cũ
-                    await Product.updateOne(
-                        { _id: allocation.productId },
-                        { 
-                            $set: { 
-                                [`variants.${allocation.variantIndex}.stock`]: newStock 
-                            } 
-                        }
-                    );
-                }
-                // Chuyển từ "cancelled" sang "allocated" hoặc "pending": Trừ lại tồn kho EVM Stock
-                else if (oldStatus === "cancelled" && (status === "allocated" || status === "pending")) {
-                    const newStock = Math.max(0, currentStock - quantity);
                     await Product.updateOne(
                         { _id: allocation.productId },
                         { 
@@ -418,6 +555,94 @@ export const editPatch = async (req: Request, res: Response) => {
             allocation.deliveredAt = new Date();
             allocation.allocatedQuantity = quantity; // Cập nhật số lượng đã nhận
             
+            // Tính công nợ khi chuyển sang "delivered"
+            const dealer = await Dealer.findById(allocation.dealerId);
+            if (dealer) {
+                const now = new Date();
+                // Tìm giá sỉ cho variant cụ thể trước, nếu không có thì tìm giá sỉ cho tất cả variants
+                let pricing = await DealerPricing.findOne({
+                    dealerId: allocation.dealerId,
+                    productId: allocation.productId,
+                    variantIndex: allocation.variantIndex, // Tìm variant cụ thể trước
+                    status: "active",
+                    effectiveDate: { $lte: now },
+                    $and: [
+                        {
+                            $or: [
+                                { expiryDate: null },
+                                { expiryDate: { $gte: now } }
+                            ]
+                        }
+                    ],
+                    deleted: false
+                });
+
+                // Nếu không tìm thấy giá sỉ cho variant cụ thể, tìm giá sỉ cho tất cả variants (variantIndex = null)
+                if (!pricing) {
+                    pricing = await DealerPricing.findOne({
+                        dealerId: allocation.dealerId,
+                        productId: allocation.productId,
+                        variantIndex: null, // Tìm giá sỉ cho tất cả variants
+                        status: "active",
+                        effectiveDate: { $lte: now },
+                        $and: [
+                            {
+                                $or: [
+                                    { expiryDate: null },
+                                    { expiryDate: { $gte: now } }
+                                ]
+                            }
+                        ],
+                        deleted: false
+                    });
+                }
+
+                if (pricing) {
+                    const wholesalePrice = pricing.wholesalePrice || 0;
+                    const orderValue = wholesalePrice * quantity;
+                    const currentDebt = dealer.debt?.currentDebt || 0;
+                    const creditLimit = dealer.debt?.creditLimit || 0;
+                    const newDebt = currentDebt + orderValue;
+
+                    // Lấy thông tin sản phẩm để hiển thị trong description
+                    const product = await Product.findById(allocation.productId);
+
+                    // Đảm bảo debt object tồn tại và có cấu trúc đúng
+                    if (!dealer.debt) {
+                        await Dealer.updateOne(
+                            { _id: allocation.dealerId },
+                            {
+                                $set: {
+                                    'debt': {
+                                        currentDebt: 0,
+                                        creditLimit: 0,
+                                        paymentHistory: []
+                                    }
+                                }
+                            }
+                        );
+                    }
+
+                    // Cập nhật công nợ và paymentHistory bằng $set và $push
+                    await Dealer.updateOne(
+                        { _id: allocation.dealerId },
+                        {
+                            $set: {
+                                'debt.currentDebt': newDebt
+                            },
+                            $push: {
+                                'debt.paymentHistory': {
+                                    date: new Date(),
+                                    amount: orderValue,
+                                    type: "debt",
+                                    description: `Điều phối ${quantity} chiếc - ${(product as any)?.name || 'Sản phẩm'}`
+                                }
+                            }
+                        }
+                    );
+                }
+            }
+            
             // Tăng tồn kho Đại lý khi đã nhận hàng
             const inventory = await DealerInventory.findOne({
                 dealerId: allocation.dealerId,
@@ -446,6 +671,7 @@ export const editPatch = async (req: Request, res: Response) => {
             }
         } else if (allocation.status === "delivered" && status !== "delivered") {
             // Nếu đang ở trạng thái delivered và chuyển sang trạng thái khác, giảm tồn kho đại lý
+            // NHƯNG không được phép chuyển về cancelled (đã check ở trên)
             const inventory = await DealerInventory.findOne({
                 dealerId: allocation.dealerId,
                 productId: allocation.productId,

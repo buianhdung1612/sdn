@@ -12,8 +12,8 @@ export const list = async (req: Request, res: Response) => {
             _id: allocationId,
             deleted: false
         })
-        .populate('dealerId', 'name code')
-        .populate('productId', 'name version');
+            .populate('dealerId', 'name code')
+            .populate('productId', 'name version');
 
         if (!allocation) {
             res.redirect(`/${pathAdmin}/dealer/allocation/list`);
@@ -45,8 +45,8 @@ export const create = async (req: Request, res: Response) => {
             _id: allocationId,
             deleted: false
         })
-        .populate('dealerId', 'name code')
-        .populate('productId', 'name version');
+            .populate('dealerId', 'name code')
+            .populate('productId', 'name version');
 
         if (!allocation) {
             res.redirect(`/${pathAdmin}/dealer/allocation/list`);
@@ -56,11 +56,18 @@ export const create = async (req: Request, res: Response) => {
         // Đếm số VIN hiện có từ mảng embedded
         const currentVinCount = (allocation.vins || []).length;
 
+        // Nếu đã có đủ VIN, redirect về list
+        if (currentVinCount >= allocation.quantity) {
+            res.redirect(`/${pathAdmin}/dealer/allocation/${allocationId}/vins/list`);
+            return;
+        }
+
         res.render('admin/pages/dealer-allocation-vin-create', {
             pageTitle: "Thêm VIN",
             allocation: allocation,
             currentVinCount: currentVinCount,
-            maxVins: allocation.quantity
+            maxVins: allocation.quantity,
+            requiredVins: allocation.quantity // Số lượng VIN cần nhập
         });
     } catch (error) {
         console.log(error);
@@ -102,24 +109,26 @@ export const createPost = async (req: Request, res: Response) => {
             return;
         }
 
-        // Kiểm tra số lượng VIN không vượt quá quantity
+        // Kiểm tra số lượng VIN - CHỈ CHO PHÉP NHẬP ĐÚNG SỐ LƯỢNG
         const currentVinCount = (allocation.vins || []).length;
+        const requiredVins = allocation.quantity;
 
-        if (currentVinCount + vins.length > allocation.quantity) {
+        // Nếu đã có VIN, không cho phép thêm tiếp
+        if (currentVinCount > 0) {
             res.json({
                 code: "error",
-                message: `Số lượng VIN không được vượt quá số lượng điều phối (${allocation.quantity} chiếc)! Hiện tại đã có ${currentVinCount} VIN.`
+                message: "Điều phối này đã có VIN. Vui lòng chỉnh sửa VIN hiện có thay vì thêm mới!"
             });
             return;
         }
 
-        const totalVinsAfterAdd = currentVinCount + vins.length;
-        // Xác thực số lượng: Khi thêm VIN đủ bằng quantity, yêu cầu phải khớp chính xác
-        // Cho phép thêm từng phần nhưng khi đạt đủ số lượng thì phải khớp chính xác
-        if (totalVinsAfterAdd === allocation.quantity) {
-            // Khi đạt đủ số lượng, sẽ tự động chuyển trạng thái và trừ tồn kho
-        } else if (totalVinsAfterAdd < allocation.quantity && allocation.status === "pending") {
-            // Cho phép thêm từng phần khi chưa đủ
+        // Phải nhập đúng số lượng VIN
+        if (vins.length !== requiredVins) {
+            res.json({
+                code: "error",
+                message: `Vui lòng nhập đúng ${requiredVins} VIN! Bạn đã nhập ${vins.length} VIN.`
+            });
+            return;
         }
 
         // Kiểm tra VIN trùng lặp trong danh sách nhập vào
@@ -169,8 +178,7 @@ export const createPost = async (req: Request, res: Response) => {
         const variant = product.variants[allocation.variantIndex];
         const currentStock = variant.stock || 0;
 
-        // Kiểm tra xem có đủ VIN để đạt đúng số lượng allocation không
-        const willReachFullQuantity = totalVinsAfterAdd === allocation.quantity;
+        // Tự động chuyển trạng thái khi thêm đủ VIN
         const wasPending = allocation.status === "pending";
 
         // Thêm VINs vào mảng embedded - dùng push() thay vì gán lại
@@ -184,29 +192,19 @@ export const createPost = async (req: Request, res: Response) => {
         allocation.markModified('vins'); // Đánh dấu mảng đã thay đổi
 
         // Cập nhật DealerAllocation: status và allocatedQuantity
-        // Khi đạt đủ số lượng VIN và đang ở trạng thái pending, chuyển sang allocated
-        // Lưu ý: Tồn kho đã được trừ khi tạo allocation, không cần trừ lại
-        if (wasPending && willReachFullQuantity) {
+        // Khi thêm đủ số lượng VIN và đang ở trạng thái pending, chuyển sang allocated
+        if (wasPending) {
             allocation.status = "allocated";
             allocation.allocatedAt = new Date();
         }
-        
-        allocation.allocatedQuantity = totalVinsAfterAdd;
+
+        allocation.allocatedQuantity = requiredVins;
         allocation.updatedBy = (req as any).user?.id || '';
         await allocation.save();
 
-        let successMessage = `Thêm ${vins.length} VIN thành công!`;
-        if (wasPending && willReachFullQuantity) {
-            successMessage += ` Đã cập nhật trạng thái sang "Đã phân bổ".`;
-        } else if (willReachFullQuantity) {
-            successMessage += ` Đã đủ ${allocation.quantity} VIN.`;
-        } else {
-            successMessage += ` Đã có ${totalVinsAfterAdd}/${allocation.quantity} VIN.`;
-        }
-
         res.json({
             code: "success",
-            message: successMessage
+            message: `Thêm ${vins.length} VIN thành công! Đã cập nhật trạng thái sang "Đã phân bổ".`
         });
     } catch (error: any) {
         console.log(error);
@@ -233,8 +231,8 @@ export const edit = async (req: Request, res: Response) => {
             _id: allocationId,
             deleted: false
         })
-        .populate('dealerId', 'name code')
-        .populate('productId', 'name version');
+            .populate('dealerId', 'name code')
+            .populate('productId', 'name version');
 
         if (!allocation) {
             res.redirect(`/${pathAdmin}/dealer/allocation/list`);
@@ -313,7 +311,7 @@ export const editPatch = async (req: Request, res: Response) => {
         }
 
         const newVin = (req.body.vin || '').trim().toUpperCase();
-        
+
         if (!newVin || newVin.length === 0) {
             res.json({
                 code: "error",
@@ -338,7 +336,7 @@ export const editPatch = async (req: Request, res: Response) => {
         }
 
         // Kiểm tra VIN trùng lặp trong cùng allocation (trừ chính VIN này)
-        const duplicateVin = vins.find((vin: any, index: number) => 
+        const duplicateVin = vins.find((vin: any, index: number) =>
             index !== vinIndex && vin.vin === newVin
         );
 

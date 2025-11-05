@@ -18,6 +18,8 @@ router.post(
 
 router.get('/list', accountAdminController.list);
 
+router.get('/detail/:id', accountAdminController.detail);
+
 router.get('/edit/:id', accountAdminController.edit);
 
 router.patch(

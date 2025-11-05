@@ -1,0 +1,185 @@
+extends ../layouts/default.pug
+
+block main
+  .card
+    .card-header
+      .row.align-items-center
+        .col
+          h4.card-title #{pageTitle}
+          if dealerDetail
+            small.text-muted #{dealerDetail.name} (#{dealerDetail.code})
+        .col-auto
+          a.btn.btn-primary(href=`/${pathAdmin}/dealer/edit/${dealerDetail.id}`)
+            i.las.la-pen.me-1
+            | Chỉnh sửa
+          a.btn.btn-secondary.ms-2(href=`/${pathAdmin}/dealer/list`)
+            i.fa-solid.fa-arrow-left.me-1
+            | Quay lại
+    .card-body.pt-0
+      if dealerDetail
+        .row
+          .col-md-6
+            h5.mb-3 Thông tin cơ bản
+            .row.mb-3
+              .col-md-4
+                label.form-label.text-muted.fw-bold Mã đại lý
+                p.mb-0.fs-5.text-primary #{dealerDetail.code}
+              .col-md-8
+                label.form-label.text-muted.fw-bold Tên đại lý
+                p.mb-0.fs-5 #{dealerDetail.name}
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Số điện thoại
+                p.mb-0 #{dealerDetail.phone || '-'}
+              .col-md-6
+                label.form-label.text-muted.fw-bold Email
+                p.mb-0 #{dealerDetail.email || '-'}
+            .row.mb-3
+              .col-12
+                label.form-label.text-muted.fw-bold Địa chỉ
+                p.mb-0 #{dealerDetail.address || '-'}
+            .row.mb-3
+              .col-md-6
+                label.form-label.text-muted.fw-bold Trạng thái
+                if (dealerDetail.status === "active")
+                  span.badge.bg-success.fs-6 Hoạt động
+                else if (dealerDetail.status === "inactive")
+                  span.badge.bg-danger.fs-6 Tạm dừng
+          .col-md-6
+            h5.mb-3 Thông tin hợp đồng
+            if dealerDetail.contract
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Số hợp đồng
+                  p.mb-0 #{dealerDetail.contract.contractNumber || '-'}
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Loại hợp đồng
+                  p.mb-0 #{dealerDetail.contract.contractType || '-'}
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Ngày ký
+                  p.mb-0 #{dealerDetail.contract.contractDate ? new Date(dealerDetail.contract.contractDate).toLocaleDateString('vi-VN') : '-'}
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Ngày hết hạn
+                  p.mb-0 #{dealerDetail.contract.expiryDate ? new Date(dealerDetail.contract.expiryDate).toLocaleDateString('vi-VN') : '-'}
+              .row.mb-3
+                .col-12
+                  label.form-label.text-muted.fw-bold Giá trị hợp đồng
+                  p.mb-0.fs-5.text-primary
+                    if dealerDetail.contract.contractValue
+                      | #{dealerDetail.contract.contractValue.toLocaleString('vi-VN')} đ
+                    else
+                      | -
+              if dealerDetail.contract.description
+                .row.mb-3
+                  .col-12
+                    label.form-label.text-muted.fw-bold Mô tả
+                    p.mb-0 #{dealerDetail.contract.description}
+            else
+              p.text-muted Chưa có thông tin hợp đồng
+        hr
+        .row
+          .col-md-6
+            h5.mb-3 Thông tin tài khoản
+            if accountInfo
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Họ tên
+                  p.mb-0 #{accountInfo.fullName}
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Email
+                  p.mb-0 #{accountInfo.email}
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Trạng thái
+                  if (accountInfo.status === "initial")
+                    span.badge.bg-warning Khởi tạo
+                  else if (accountInfo.status === "active")
+                    span.badge.bg-success Hoạt động
+                  else if(accountInfo.status === "inactive")
+                    span.badge.bg-danger Tạm dừng
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Nhóm quyền
+                  if accountInfo.rolesName && accountInfo.rolesName.length > 0
+                    div
+                      each roleName in accountInfo.rolesName
+                        span.badge.bg-dark.me-1.mb-1 #{roleName}
+                  else
+                    | -
+            else
+              p.text-muted Chưa gán tài khoản
+          .col-md-6
+            h5.mb-3 Công nợ
+            if dealerDetail.debt
+              .row.mb-3
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Công nợ hiện tại
+                  p.mb-0.fs-5.text-danger
+                    strong #{dealerDetail.debt.currentDebt ? dealerDetail.debt.currentDebt.toLocaleString('vi-VN') : '0'} đ
+                .col-md-6
+                  label.form-label.text-muted.fw-bold Hạn mức tín dụng
+                  p.mb-0.fs-5.text-primary
+                    strong #{dealerDetail.debt.creditLimit ? dealerDetail.debt.creditLimit.toLocaleString('vi-VN') : '0'} đ
+              if dealerDetail.debt.paymentHistory && dealerDetail.debt.paymentHistory.length > 0
+                label.form-label.text-muted.fw-bold.mb-2 Lịch sử thanh toán (5 giao dịch gần nhất)
+                .table-responsive
+                  table.table.table-sm.table-bordered
+                    thead.table-light
+                      tr
+                        th Ngày
+                        th Loại
+                        th Số tiền
+                        th Mô tả
+                    tbody
+                      each payment, index in dealerDetail.debt.paymentHistory.slice(-5).reverse()
+                        tr
+                          td #{new Date(payment.date).toLocaleDateString('vi-VN')}
+                          td
+                            if payment.type === "payment"
+                              span.badge.bg-success Thanh toán
+                            else
+                              span.badge.bg-danger Công nợ
+                          td.text-end #{payment.amount.toLocaleString('vi-VN')} đ
+                          td #{payment.description || '-'}
+            else
+              p.text-muted Chưa có thông tin công nợ
+        if allocationStats && allocationStats.length > 0
+          hr
+          .row
+            .col-12
+              h5.mb-3 Thống kê điều phối
+              .table-responsive
+                table.table.table-bordered.table-hover
+                  thead.table-light
+                    tr
+                      th Trạng thái
+                      th Số lượng điều phối
+                      th Tổng số chiếc
+                  tbody
+                    each stat in allocationStats
+                      tr
+                        td
+                          if stat._id === "pending"
+                            span.badge.bg-warning Chờ phân bổ
+                          else if stat._id === "allocated"
+                            span.badge.bg-primary Đã phân bổ
+                          else if stat._id === "shipped"
+                            span.badge.bg-info Đã giao hàng
+                          else if stat._id === "delivered"
+                            span.badge.bg-success Đã nhận
+                          else if stat._id === "cancelled"
+                            span.badge.bg-danger Đã hủy
+                          else
+                            | #{stat._id}
+                        td.text-center #{stat.count}
+                        td.text-end #{stat.totalQuantity ? stat.totalQuantity.toLocaleString('vi-VN') : '0'} chiếc
+        .row.mb-3
+          .col-md-6
+            label.form-label.text-muted.fw-bold Ngày tạo
+            p.mb-0 #{dealerDetail.createdAt ? new Date(dealerDetail.createdAt).toLocaleString('vi-VN') : '-'}
+          .col-md-6
+            label.form-label.text-muted.fw-bold Ngày cập nhật
+            p.mb-0 #{dealerDetail.updatedAt ? new Date(dealerDetail.updatedAt).toLocaleString('vi-VN') : '-'}
+      else
+        .alert.alert-warning Đại lý không tồn tại!
+

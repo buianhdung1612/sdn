@@ -11,7 +11,6 @@ const schema = new mongoose.Schema(
             enum: ["initial", "active", "inactive"], // initial - Khởi tạo, active – Hoạt động, inactive – Tạm dừng
             default: "initial"
         },
-        avatar: String,
         search: String,
         lastLoginAt: Date, // Thời gian đăng nhập gần nhất
         deleted: {

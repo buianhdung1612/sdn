@@ -21,7 +21,6 @@ export const verifyToken = async (req: RequestAccount, res: Response, next: Next
             res.locals.accountAdmin = {
                 fullName: "SuperAdmin",
                 email: process.env.SUPER_ADMIN_EMAIL,
-                avatar: "/admin/assets/images/users/avatar-1.jpg",
                 isSuperAdmin: true
             };
 
@@ -43,7 +42,6 @@ export const verifyToken = async (req: RequestAccount, res: Response, next: Next
             res.locals.accountAdmin = {
                 fullName: existAccount.fullName,
                 email: existAccount.email,
-                avatar: existAccount.avatar,
             };
 
             let permissions: string[] = [];

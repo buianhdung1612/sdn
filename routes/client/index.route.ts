@@ -5,7 +5,6 @@ import * as authMiddleware from "../../middlewares/client/auth.middleware";
 
 const router = Router();
 
-// Route root để kiểm tra API
 router.get('/', (req: Request, res: Response) => {
     res.json({
         success: true,

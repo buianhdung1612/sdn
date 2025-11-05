@@ -65,7 +65,9 @@ block main
                       else if (item.status === "inactive")
                         span.badge.bg-danger Tạm dừng
                     td.text-end
-                      a(href=`/${pathAdmin}/dealer/edit/${item.id}` title="Chỉnh sửa")
+                      a(href=`/${pathAdmin}/dealer/detail/${item.id}` title="Xem chi tiết")
+                        i.las.la-eye.text-info.font-16
+                      a(href=`/${pathAdmin}/dealer/edit/${item.id}` title="Chỉnh sửa" style="margin-left: 8px;")
                         i.las.la-pen.text-secondary.font-16
                       a(href=`/${pathAdmin}/dealer/${item.id}/target-sales/list` title="Quản lý chỉ tiêu" style="margin-left: 8px;")
                         i.las.la-chart-line.text-info.font-16
@@ -75,6 +77,9 @@ block main
                         i.las.la-percent.text-warning.font-16
                       a(href=`/${pathAdmin}/dealer/${item.id}/promotion/list` title="Quản lý khuyến mãi" style="margin-left: 8px;")
                         i.las.la-gift.text-danger.font-16
+                      if item.debt && item.debt.currentDebt && item.debt.currentDebt > 0
+                        a(href=`/${pathAdmin}/dealer/payment/${item.id}` title="Thanh toán công nợ" style="margin-left: 8px;")
+                          i.las.la-money-bill-wave.text-primary.font-16
                       a(
                         href="javascript:;"
                         button-api=`delete-${modelName}`

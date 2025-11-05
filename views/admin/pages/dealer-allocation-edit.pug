@@ -45,12 +45,17 @@ block main
           .col-md-6.col-lg-6
             .mb-3
               label.form-label(for="status") Trạng thái *
-              select.form-select(id="status" name="status" required)
+              select.form-select(id="status" name="status" required disabled=(allocation.status === "delivered" || allocation.status === "cancelled"))
                 option(value="pending" selected=(allocation.status === "pending")) Chờ phân bổ
                 option(value="allocated" selected=(allocation.status === "allocated")) Đã phân bổ
                 option(value="shipped" selected=(allocation.status === "shipped")) Đã giao hàng
                 option(value="delivered" selected=(allocation.status === "delivered")) Đã nhận
                 option(value="cancelled" selected=(allocation.status === "cancelled")) Đã hủy
+              if allocation.status === "delivered" || allocation.status === "cancelled"
+                small.text-danger.mt-1.d-block
+                  i.fa-solid.fa-exclamation-triangle.me-1
+                  | Trạng thái này không thể thay đổi lại!
+              input(type="hidden" id="currentStatus" value=allocation.status)
           .col-md-6.col-lg-6
             .mb-3
               label.form-label Số lượng đã nhận

@@ -32,13 +32,6 @@ block main
                 option(value="inactive") Tạm dừng
           .col-md-6.col-lg-6
             .mb-3
-              +form-group-file(
-                "Ảnh đại diện",
-                "avatar",
-                "avatar"
-              )
-          .col-md-6.col-lg-6
-            .mb-3
               label.form-label Nhóm quyền
               div(class="checkbox-list" checkbox-list="roles")
                 +checkbox-list(roleList)

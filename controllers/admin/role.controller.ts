@@ -86,6 +86,41 @@ export const list = async (req: Request, res: Response) => {
     });
 }
 
+export const detail = async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const roleDetail = await Role.findOne({
+            _id: id,
+            deleted: false
+        })
+
+        if (!roleDetail) {
+            res.redirect(`/${pathAdmin}/role/list`);
+            return;
+        }
+
+        // Lấy danh sách permission names
+        const permissionNames = roleDetail.permissions
+            .map(permId => {
+                const perm = permissionList.find(p => p.id === permId);
+                return perm ? perm.name : permId;
+            })
+            .filter(Boolean);
+
+        res.render('admin/pages/role-detail', {
+            pageTitle: "Chi tiết nhóm quyền",
+            roleDetail: roleDetail,
+            permissionNames: permissionNames,
+            permissionList: permissionList
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.redirect(`/${pathAdmin}/role/list`);
+    }
+}
+
 export const edit = async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
