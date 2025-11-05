@@ -32,6 +32,13 @@ tags:
     description: Báo cáo doanh thu và tần suất sử dụng (Admin)
   - name: AI
     description: Dự báo nhu cầu và gợi ý nâng cấp hạ tầng (Admin)
+  - name: Customer
+    description: API quản lý khách hàng
+  - name: Test Drive
+    description: API quản lý lịch hẹn lái thử
+  - name: Customer Feedback
+    description: API quản lý phản hồi khách hàng
+
 
 components:
   securitySchemes:
@@ -1662,6 +1669,268 @@ paths:
           required: true
           schema:
             type: integer
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== CUSTOMER APIs (Phần 1c) ====================
+  /customers/register:
+    post:
+      tags:
+        - Customer
+      summary: Đăng ký khách hàng mới
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, phone]
+              properties:
+                fullName: { type: string }
+                phone: { type: string }
+                email: { type: string }
+      responses:
+        '201':
+          description: Thành công
+
+  /customers:
+    get:
+      tags:
+        - Customer
+      summary: Danh sách khách hàng
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /customers/{id}:
+    get:
+      tags:
+        - Customer
+      summary: Chi tiết khách hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+    patch:
+      tags:
+        - Customer
+      summary: Cập nhật khách hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+    delete:
+      tags:
+        - Customer
+      summary: Xóa khách hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== TEST DRIVE APIs ====================
+  /test-drives:
+    post:
+      tags:
+        - Test Drive
+      summary: Đặt lịch lái thử
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, productId, variantIndex, scheduledDate, scheduledTime, location]
+      responses:
+        '201':
+          description: Thành công
+    get:
+      tags:
+        - Test Drive
+      summary: Danh sách lịch hẹn
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /test-drives/{id}:
+    get:
+      tags:
+        - Test Drive
+      summary: Chi tiết lịch hẹn
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  /test-drives/{id}/confirm:
+    patch:
+      tags:
+        - Test Drive
+      summary: Xác nhận lịch hẹn
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  /test-drives/{id}/complete:
+    patch:
+      tags:
+        - Test Drive
+      summary: Hoàn thành lái thử
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  /test-drives/{id}/cancel:
+    patch:
+      tags:
+        - Test Drive
+      summary: Hủy lịch hẹn
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  # ==================== CUSTOMER FEEDBACK APIs ====================
+  /feedbacks:
+    post:
+      tags:
+        - Customer Feedback
+      summary: Gửi phản hồi/khiếu nại
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, type, category, subject, description]
+      responses:
+        '201':
+          description: Thành công
+    get:
+      tags:
+        - Customer Feedback
+      summary: Danh sách phản hồi
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+
+  /feedbacks/{id}:
+    get:
+      tags:
+        - Customer Feedback
+      summary: Chi tiết phản hồi
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  /feedbacks/{id}/reply:
+    patch:
+      tags:
+        - Customer Feedback
+      summary: Trả lời phản hồi
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  /feedbacks/{id}/resolve:
+    patch:
+      tags:
+        - Customer Feedback
+      summary: Giải quyết phản hồi
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thành công
+
+  /feedbacks/{id}/close:
+    patch:
+      tags:
+        - Customer Feedback
+      summary: Đóng phản hồi
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
       responses:
         '200':
           description: Thành công
