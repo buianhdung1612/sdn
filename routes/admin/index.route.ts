@@ -12,6 +12,7 @@ import dealerAllocationVinRoutes from "./dealer-allocation-vin.route"
 import dealerPricingRoutes from "./dealer-pricing.route"
 import dealerDiscountRoutes from "./dealer-discount.route"
 import dealerPromotionRoutes from "./dealer-promotion.route"
+import reportRoutes from "./report.route"
 import analyticsRoutes from "./analytics.route"
 import aiRoutes from "./ai.route"
 
@@ -32,6 +33,7 @@ router.use('/dealer/:dealerId/discount', authMiddleware.verifyToken, dealerDisco
 router.use('/dealer/:dealerId/promotion', authMiddleware.verifyToken, dealerPromotionRoutes);
 router.use('/dealer/allocation', authMiddleware.verifyToken, dealerAllocationRoutes);
 router.use('/dealer/allocation/:allocationId/vins', authMiddleware.verifyToken, dealerAllocationVinRoutes);
+router.use('/report', authMiddleware.verifyToken, reportRoutes);
 router.use('/analytics', authMiddleware.verifyToken, analyticsRoutes);
 router.use('/ai', authMiddleware.verifyToken, aiRoutes);
 

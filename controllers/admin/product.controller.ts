@@ -400,7 +400,7 @@ export const detail = async (req: Request, res: Response) => {
         const productDetail = await Product.findOne({
             _id: id,
             deleted: false
-        });
+        }).lean();
 
         if (!productDetail) {
             res.redirect(`/${pathAdmin}/product/list`);
@@ -412,18 +412,41 @@ export const detail = async (req: Request, res: Response) => {
         const categories = await CategoryProduct.find({
             _id: { $in: categoryIds },
             deleted: false
-        });
+        }).lean();
 
         // Lấy thông tin attributes
         const attributeIds = productDetail.attributes || [];
         const attributes = await AttributeProduct.find({
             _id: { $in: attributeIds },
             deleted: false
+        }).lean();
+
+        // Format variants để dễ hiển thị hơn
+        const formattedVariants = (productDetail.variants || []).map((variant: any) => {
+            const formattedVariant: any = {
+                ...variant,
+                attributeValueMap: {} // Map để dễ truy cập attributeValue theo attributeId
+            };
+
+            // Tạo map attributeValue theo attributeId
+            if (variant.attributeValue && Array.isArray(variant.attributeValue)) {
+                variant.attributeValue.forEach((av: any) => {
+                    if (typeof av === 'object' && av !== null && av.attributeId) {
+                        const attrId = typeof av.attributeId === 'string' ? av.attributeId : av.attributeId.toString();
+                        formattedVariant.attributeValueMap[attrId] = av;
+                    }
+                });
+            }
+
+            return formattedVariant;
         });
 
         res.render("admin/pages/product-detail", {
             pageTitle: "Chi tiết sản phẩm",
-            productDetail: productDetail,
+            productDetail: {
+                ...productDetail,
+                variants: formattedVariants
+            },
             categories: categories,
             attributes: attributes
         })

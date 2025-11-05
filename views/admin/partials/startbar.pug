@@ -150,6 +150,31 @@
                         li.nav-item
                           a.nav-link(href=`/${pathAdmin}/dealer/allocation/list`) Điều phối xe
                         // end nav-item
+              if (permissions.some(p => p.includes("dealer")) || permissions.some(p => p.includes("report")))
+                li.nav-item
+                  a.nav-link(
+                    aria-controls="sidebarReport" 
+                    aria-expanded="false" 
+                    role="button" 
+                    data-bs-toggle="collapse" 
+                    href="#sidebarReport"
+                    )
+                    i.iconoir-chart-line.menu-icon
+                    span Báo cáo & Phân tích
+                  #sidebarReport.collapse
+                    ul.nav.flex-column
+                      if (permissions.includes("dealer-list") || permissions.some(p => p.includes("report")))
+                        li.nav-item
+                          a.nav-link(href=`/${pathAdmin}/report/sales-by-dealer`) Doanh số theo đại lý
+                        // end nav-item
+                      if (permissions.includes("dealer-list") || permissions.some(p => p.includes("report")))
+                        li.nav-item
+                          a.nav-link(href=`/${pathAdmin}/report/inventory`) Tồn kho
+                        // end nav-item
+                      if (permissions.includes("dealer-list") || permissions.some(p => p.includes("report")))
+                        li.nav-item
+                          a.nav-link(href=`/${pathAdmin}/report/consumption-rate`) Tốc độ tiêu thụ
+                        // end nav-item
         // end startbar-collapse
     // end startbar-menu
 // end startbar
