@@ -11,6 +11,10 @@ import crypto from 'crypto';
 // Lấy danh sách đơn hàng
 export const getOrderList = async (req: RequestClient, res: Response) => {
     try {
+        console.log("=== GET ORDER LIST ===");
+        console.log("req.dealerId:", req.dealerId);
+        console.log("req.userId:", req.userId);
+        
         const dealerId = req.dealerId;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
@@ -18,11 +22,14 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
         const keyword = req.query.keyword as string || "";
 
         if (!dealerId) {
+            console.log("ERROR: No dealerId found");
             return res.status(401).json({
                 success: false,
                 message: "Không tìm thấy thông tin đại lý!"
             });
         }
+        
+        console.log("Query:", { dealerId, page, limit, status, keyword });
 
         const query: any = {
             dealerId: new mongoose.Types.ObjectId(dealerId),
@@ -41,12 +48,15 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
         const totalPages = Math.ceil(totalRecords / limit);
         const skip = (page - 1) * limit;
 
+        console.log("Fetching orders...");
         const orders = await Order.find(query)
             .populate('items.productId', 'name version images')
             .sort({ createdAt: -1 })
             .limit(limit)
             .skip(skip);
 
+        console.log("Found orders:", orders.length);
+        
         const formattedOrders = orders.map((order: any) => ({
             id: order._id.toString(),
             orderNumber: order.orderNumber,
@@ -70,6 +80,8 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
             createdAt: order.createdAt
         }));
 
+        console.log("Returning response with", formattedOrders.length, "orders");
+        
         return res.json({
             success: true,
             message: "Lấy danh sách đơn hàng thành công!",
@@ -82,10 +94,14 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.log(error);
+        console.log("=== ERROR IN GET ORDER LIST ===");
+        console.log("Error:", error);
+        console.log("Error message:", error.message);
+        console.log("Error stack:", error.stack);
         return res.status(500).json({
             success: false,
-            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
+            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!",
+            error: error.message
         });
     }
 };
@@ -198,10 +214,16 @@ export const getOrderDetail = async (req: RequestClient, res: Response) => {
 // Tạo đơn hàng mới
 export const createOrder = async (req: RequestClient, res: Response) => {
     try {
+        console.log("=== CREATE ORDER ===");
+        console.log("dealerId:", req.dealerId);
+        console.log("userId:", req.userId);
+        console.log("body:", JSON.stringify(req.body, null, 2));
+        
         const dealerId = req.dealerId;
         const userId = req.userId;
 
         if (!dealerId) {
+            console.log("ERROR: No dealerId");
             return res.status(401).json({
                 success: false,
                 message: "Không tìm thấy thông tin đại lý!"
@@ -232,6 +254,8 @@ export const createOrder = async (req: RequestClient, res: Response) => {
 
         for (const item of items) {
             const { productId, variantIndex, quantity } = item;
+            
+            console.log(`Processing item: productId=${productId}, variantIndex=${variantIndex}, quantity=${quantity}`);
 
             // Validate product
             const product = await Product.findOne({
@@ -241,11 +265,14 @@ export const createOrder = async (req: RequestClient, res: Response) => {
             });
 
             if (!product) {
+                console.log(`ERROR: Product not found: ${productId}`);
                 return res.status(404).json({
                     success: false,
                     message: `Không tìm thấy sản phẩm với ID: ${productId}`
                 });
             }
+            
+            console.log(`Found product: ${product.name}`);
 
             // Validate variant
             const productData = product.toObject() as any;
@@ -346,7 +373,9 @@ export const createOrder = async (req: RequestClient, res: Response) => {
             createdBy: new mongoose.Types.ObjectId(userId)
         });
 
+        console.log("Saving order...");
         await newOrder.save();
+        console.log("Order saved successfully:", newOrder._id);
 
         return res.status(201).json({
             success: true,
@@ -359,10 +388,14 @@ export const createOrder = async (req: RequestClient, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.log(error);
+        console.log("=== ERROR IN CREATE ORDER ===");
+        console.log("Error:", error);
+        console.log("Error message:", error.message);
+        console.log("Error stack:", error.stack);
         return res.status(500).json({
             success: false,
-            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
+            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!",
+            error: error.message
         });
     }
 };

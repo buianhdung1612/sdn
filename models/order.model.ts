@@ -41,7 +41,7 @@ const orderItemSchema = new Schema({
         name: String,
         version: String,
         images: [String],
-        attributeValues: [String] // Màu sắc, nội thất...
+        attributeValues: [Schema.Types.Mixed] // Lưu array of objects (attrId, attrType, label, value)
     }
 }, { _id: false });
 
