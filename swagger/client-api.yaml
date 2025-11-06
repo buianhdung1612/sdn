@@ -1465,584 +1465,6 @@ paths:
                       totalPages:
                         type: integer
                         example: 8
-
-  /customers/{id}:
-    get:
-      tags:
-        - Customers
-      summary: Chi tiết khách hàng
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674a1234567890abcdef1234"
-      responses:
-        '200':
-          description: Thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/CustomerResponse'
-        '404':
-          description: Không tìm thấy
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    patch:
-      tags:
-        - Customers
-      summary: Cập nhật khách hàng
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674a1234567890abcdef1234"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                fullName:
-                  type: string
-                  example: "Nguyễn Văn An (Updated)"
-                email:
-                  type: string
-                  example: "newemail@gmail.com"
-                address:
-                  type: object
-                  properties:
-                    street:
-                      type: string
-                      example: "456 Lê Lợi"
-                status:
-                  type: string
-                  enum: [active, inactive]
-                  example: "active"
-      responses:
-        '200':
-          description: Cập nhật thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Cập nhật thông tin khách hàng thành công"
-                  data:
-                    $ref: '#/components/schemas/CustomerResponse'
-
-    delete:
-      tags:
-        - Customers
-      summary: Xóa khách hàng (soft delete)
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674a1234567890abcdef1234"
-      responses:
-        '200':
-          description: Xóa thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Xóa khách hàng thành công"
-
-  # ========== TEST DRIVES ==========
-  /test-drives:
-    post:
-      tags:
-        - Test Drives
-      summary: Đặt lịch lái thử
-      description: Tạo lịch hẹn lái thử xe cho khách hàng
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TestDriveCreateRequest'
-      responses:
-        '201':
-          description: Đặt lịch thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Đặt lịch lái thử thành công"
-                  data:
-                    $ref: '#/components/schemas/TestDriveResponse'
-        '400':
-          description: Dữ liệu không hợp lệ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    get:
-      tags:
-        - Test Drives
-      summary: Danh sách lịch hẹn lái thử
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-          example: 1
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-          example: 20
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [pending, confirmed, completed, cancelled, no_show]
-          example: "pending"
-        - name: customerId
-          in: query
-          schema:
-            type: string
-          description: Lọc theo khách hàng
-          example: "674a1234567890abcdef1234"
-        - name: date
-          in: query
-          schema:
-            type: string
-            format: date
-          description: Lọc theo ngày hẹn
-          example: "2025-02-01"
-      responses:
-        '200':
-          description: Thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TestDriveResponse'
-                  pagination:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                        example: 45
-                      page:
-                        type: integer
-                        example: 1
-
-  /test-drives/{id}:
-    get:
-      tags:
-        - Test Drives
-      summary: Chi tiết lịch hẹn
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674c5555666677778888dddd"
-      responses:
-        '200':
-          description: Thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/TestDriveResponse'
-
-  /test-drives/{id}/confirm:
-    patch:
-      tags:
-        - Test Drives
-      summary: Xác nhận lịch hẹn
-      description: Chuyển status từ "pending" sang "confirmed"
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674c5555666677778888dddd"
-      responses:
-        '200':
-          description: Xác nhận thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Xác nhận lịch hẹn thành công"
-                  data:
-                    $ref: '#/components/schemas/TestDriveResponse'
-
-  /test-drives/{id}/complete:
-    patch:
-      tags:
-        - Test Drives
-      summary: Hoàn thành lái thử
-      description: Chuyển status sang "completed" sau khi khách lái thử xong
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674c5555666677778888dddd"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                feedback:
-                  type: string
-                  description: Nhận xét của khách sau khi lái thử
-                  example: "Khách hài lòng, quan tâm đến việc mua xe"
-      responses:
-        '200':
-          description: Hoàn thành thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Hoàn thành lái thử thành công"
-
-  /test-drives/{id}/cancel:
-    patch:
-      tags:
-        - Test Drives
-      summary: Hủy lịch hẹn
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674c5555666677778888dddd"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                cancelReason:
-                  type: string
-                  description: Lý do hủy
-                  example: "Khách đổi lịch"
-      responses:
-        '200':
-          description: Hủy thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Hủy lịch hẹn thành công"
-
-  # ========== CUSTOMER FEEDBACK ==========
-  /feedbacks:
-    post:
-      tags:
-        - Customer Feedback
-      summary: Gửi phản hồi/khiếu nại
-      description: Khách hàng gửi feedback hoặc complaint
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeedbackCreateRequest'
-      responses:
-        '201':
-          description: Gửi phản hồi thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Gửi phản hồi thành công"
-                  data:
-                    $ref: '#/components/schemas/FeedbackResponse'
-
-    get:
-      tags:
-        - Customer Feedback
-      summary: Danh sách phản hồi
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-          example: 1
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-          example: 20
-        - name: type
-          in: query
-          schema:
-            type: string
-            enum: [feedback, complaint, inquiry, suggestion]
-          example: "complaint"
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [open, in_progress, resolved, closed]
-          example: "open"
-        - name: priority
-          in: query
-          schema:
-            type: string
-            enum: [low, medium, high, urgent]
-          example: "high"
-        - name: customerId
-          in: query
-          schema:
-            type: string
-          example: "674a1234567890abcdef1234"
-      responses:
-        '200':
-          description: Thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/FeedbackResponse'
-                  pagination:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                        example: 78
-
-  /feedbacks/{id}:
-    get:
-      tags:
-        - Customer Feedback
-      summary: Chi tiết phản hồi
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674e9999aaaabbbbccccffff"
-      responses:
-        '200':
-          description: Thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    $ref: '#/components/schemas/FeedbackResponse'
-
-  /feedbacks/{id}/reply:
-    patch:
-      tags:
-        - Customer Feedback
-      summary: Trả lời phản hồi
-      description: Nhân viên trả lời phản hồi của khách hàng
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674e9999aaaabbbbccccffff"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeedbackReplyRequest'
-      responses:
-        '200':
-          description: Trả lời thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Trả lời phản hồi thành công"
-                  data:
-                    $ref: '#/components/schemas/FeedbackResponse'
-
-  /feedbacks/{id}/resolve:
-    patch:
-      tags:
-        - Customer Feedback
-      summary: Giải quyết phản hồi
-      description: Đánh dấu phản hồi đã được giải quyết
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674e9999aaaabbbbccccffff"
-      responses:
-        '200':
-          description: Giải quyết thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Giải quyết phản hồi thành công"
-
-  /feedbacks/{id}/close:
-    patch:
-      tags:
-        - Customer Feedback
-      summary: Đóng phản hồi
-      description: Đóng phản hồi sau khi đã giải quyết hoàn tất
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674e9999aaaabbbbccccffff"
-      responses:
-        '200':
-          description: Đóng thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Đóng phản hồi thành công"
-
   # ========== ALLOCATION REQUESTS ==========
   /allocation-requests:
     post:
@@ -2194,35 +1616,6 @@ paths:
       responses:
         '200':
           description: Xóa thành công
-
-  /allocation-requests/{id}/submit:
-    patch:
-      tags:
-        - Allocation Request
-      summary: Gửi yêu cầu (draft → submitted)
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          example: "674f1111222233334444gggg"
-      responses:
-        '200':
-          description: Gửi yêu cầu thành công
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Gửi yêu cầu đặt hàng thành công"
 
   /allocation-requests/{id}/cancel:
     patch:
@@ -2410,6 +1803,25 @@ paths:
       summary: Danh sách khuyến mãi
       security:
         - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          example: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, expired]
+          example: "active"
       responses:
         '200':
           description: Thành công
@@ -2421,10 +1833,254 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  message:
+                    type: string
+                    example: "Lấy danh sách khuyến mãi thành công!"
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PromotionResponse'
+                    type: object
+                    properties:
+                      promotions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PromotionResponse'
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 20
+                          totalRecords:
+                            type: integer
+                            example: 15
+                          totalPages:
+                            type: integer
+                            example: 1
+
+    post:
+      tags:
+        - Pricing & Promotion
+      summary: Tạo khuyến mãi mới
+      description: Dealer tạo khuyến mãi riêng của showroom
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - promotionName
+                - promotionType
+                - startDate
+                - endDate
+              properties:
+                promotionName:
+                  type: string
+                  example: "Khuyến mãi cuối tuần - Giảm 10%"
+                promotionType:
+                  type: string
+                  enum: [buy_x_get_y, discount_percentage, fixed_discount, free_gift]
+                  example: "discount_percentage"
+                promotionValue:
+                  type: number
+                  example: 10
+                promotionConfig:
+                  type: object
+                  example: { "minQuantity": 2 }
+                applyTo:
+                  type: string
+                  enum: [all_products, specific_products, product_category]
+                  example: "all_products"
+                productIds:
+                  type: array
+                  items:
+                    type: string
+                  example: ["673b1111222233334444aaaa"]
+                conditions:
+                  type: object
+                  example: { "minAmount": 1000000000 }
+                startDate:
+                  type: string
+                  format: date-time
+                  example: "2025-11-10T00:00:00.000Z"
+                endDate:
+                  type: string
+                  format: date-time
+                  example: "2025-11-12T23:59:59.000Z"
+                notes:
+                  type: string
+                  example: "Áp dụng cho khách hàng mua từ 2 xe trở lên"
+      responses:
+        '201':
+          description: Tạo khuyến mãi thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tạo khuyến mãi thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "673b9999888877776666cccc"
+                      promotionName:
+                        type: string
+                        example: "Khuyến mãi cuối tuần - Giảm 10%"
+                      promotionType:
+                        type: string
+                        example: "discount_percentage"
+                      startDate:
+                        type: string
+                        format: date-time
+                        example: "2025-11-10T00:00:00.000Z"
+                      endDate:
+                        type: string
+                        format: date-time
+                        example: "2025-11-12T23:59:59.000Z"
+                      status:
+                        type: string
+                        example: "active"
+        '400':
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /pricing/promotions/{id}:
+    patch:
+      tags:
+        - Pricing & Promotion
+      summary: Cập nhật khuyến mãi
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "673b9999888877776666cccc"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                promotionName:
+                  type: string
+                  example: "Khuyến mãi Black Friday - Giảm 20%"
+                promotionType:
+                  type: string
+                  enum: [buy_x_get_y, discount_percentage, fixed_discount, free_gift]
+                  example: "discount_percentage"
+                promotionValue:
+                  type: number
+                  example: 20
+                status:
+                  type: string
+                  enum: [active, inactive, expired]
+                  example: "active"
+                startDate:
+                  type: string
+                  format: date-time
+                  example: "2025-11-25T00:00:00.000Z"
+                endDate:
+                  type: string
+                  format: date-time
+                  example: "2025-11-26T23:59:59.000Z"
+                notes:
+                  type: string
+                  example: "Mở rộng thời gian khuyến mãi"
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cập nhật khuyến mãi thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "673b9999888877776666cccc"
+                      promotionName:
+                        type: string
+                        example: "Khuyến mãi Black Friday - Giảm 20%"
+                      promotionType:
+                        type: string
+                        example: "discount_percentage"
+                      startDate:
+                        type: string
+                        format: date-time
+                        example: "2025-11-25T00:00:00.000Z"
+                      endDate:
+                        type: string
+                        format: date-time
+                        example: "2025-11-26T23:59:59.000Z"
+                      status:
+                        type: string
+                        example: "active"
+        '404':
+          description: Không tìm thấy khuyến mãi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Pricing & Promotion
+      summary: Xóa khuyến mãi (soft delete)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "673b9999888877776666cccc"
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Xóa khuyến mãi thành công!"
+        '404':
+          description: Không tìm thấy khuyến mãi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /pricing/calculate:
     get:

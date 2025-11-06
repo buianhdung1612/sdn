@@ -12,8 +12,18 @@ router.get("/", controller.getDealerPricing);
 // GET /api/client/discounts - Lấy chiết khấu
 router.get("/discounts", controller.getDealerDiscounts);
 
-// GET /api/client/promotions - Lấy khuyến mãi
+// ========== PROMOTIONS ==========
+// GET /api/client/promotions - Lấy danh sách khuyến mãi
 router.get("/promotions", controller.getDealerPromotions);
+
+// POST /api/client/promotions - Tạo khuyến mãi mới
+router.post("/promotions", controller.createPromotion as any);
+
+// PATCH /api/client/promotions/:id - Cập nhật khuyến mãi
+router.patch("/promotions/:id", controller.updatePromotion as any);
+
+// DELETE /api/client/promotions/:id - Xóa khuyến mãi
+router.delete("/promotions/:id", controller.deletePromotion as any);
 
 export default router;
 

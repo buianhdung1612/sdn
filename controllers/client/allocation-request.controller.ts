@@ -248,7 +248,7 @@ export const createRequest = async (req: RequestClient, res: Response) => {
             });
         }
 
-        const { items, requestType, priority, expectedDeliveryDate, reason, notes, submitNow } = req.body;
+        const { items, requestType, priority, expectedDeliveryDate, reason, notes } = req.body;
 
         // Validate items
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -303,7 +303,7 @@ export const createRequest = async (req: RequestClient, res: Response) => {
         // Generate request number
         const requestNumber = generateUniqueNumber("REQ");
 
-        // Create request
+        // Create and submit request immediately
         const newRequest = new AllocationRequest({
             requestNumber: requestNumber,
             dealerId: dealerId,
@@ -313,77 +313,22 @@ export const createRequest = async (req: RequestClient, res: Response) => {
             priority: priority || "medium",
             expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
             reason: reason || '',
-            status: submitNow ? "pending" : "draft",
-            submittedAt: submitNow ? new Date() : null,
+            status: "pending", // Tạo và submit luôn
+            submittedAt: new Date(), // Gửi ngay
             notes: notes || '',
             createdBy: userId
         });
 
         await newRequest.save();
 
-        res.json({
-            success: true,
-            message: submitNow ? "Gửi yêu cầu đặt hàng thành công!" : "Lưu nháp yêu cầu đặt hàng thành công!",
-            data: {
-                requestId: newRequest._id.toString(),
-                requestNumber: newRequest.requestNumber,
-                status: newRequest.status
-            }
-        });
-    } catch (error: any) {
-        console.log(error);
-        res.status(500).json({
-            success: false,
-            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
-        });
-    }
-};
-
-// PATCH /api/client/allocation-requests/:id/submit
-// Gửi yêu cầu đặt hàng (từ draft -> pending)
-export const submitRequest = async (req: RequestClient, res: Response) => {
-    try {
-        const dealerId = req.dealerId;
-        const requestId = req.params.id;
-
-        if (!dealerId) {
-            return res.status(401).json({
-                success: false,
-                message: "Không tìm thấy thông tin đại lý!"
-            });
-        }
-
-        const request = await AllocationRequest.findOne({
-            _id: requestId,
-            dealerId: new mongoose.Types.ObjectId(dealerId),
-            deleted: false
-        });
-
-        if (!request) {
-            return res.status(404).json({
-                success: false,
-                message: "Không tìm thấy yêu cầu đặt hàng!"
-            });
-        }
-
-        if (request.status !== "draft") {
-            return res.status(400).json({
-                success: false,
-                message: "Chỉ có thể gửi yêu cầu ở trạng thái nháp!"
-            });
-        }
-
-        request.status = "pending";
-        request.submittedAt = new Date();
-        await request.save();
-
-        res.json({
+        return res.status(201).json({
             success: true,
             message: "Gửi yêu cầu đặt hàng thành công!",
             data: {
-                requestId: request._id.toString(),
-                status: request.status,
-                submittedAt: request.submittedAt
+                requestId: newRequest._id.toString(),
+                requestNumber: newRequest.requestNumber,
+                status: newRequest.status,
+                submittedAt: newRequest.submittedAt
             }
         });
     } catch (error: any) {
@@ -447,216 +392,6 @@ export const cancelRequest = async (req: RequestClient, res: Response) => {
     } catch (error: any) {
         console.log(error);
         res.status(500).json({
-            success: false,
-            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
-        });
-    }
-};
-
-// [PATCH] /api/client/allocation-requests/:id - Cập nhật yêu cầu đặt hàng (chỉ draft)
-export const updateRequest = async (req: RequestClient, res: Response) => {
-    try {
-        const requestId = req.params.id;
-        const dealerId = req["dealerId"];
-        const { items, requestType, priority, expectedDeliveryDate, reason, notes } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(requestId)) {
-            return res.status(400).json({
-                success: false,
-                message: "ID yêu cầu không hợp lệ!"
-            });
-        }
-
-        const request = await AllocationRequest.findOne({
-            _id: requestId,
-            dealerId: new mongoose.Types.ObjectId(dealerId),
-            deleted: false
-        });
-
-        if (!request) {
-            return res.status(404).json({
-                success: false,
-                message: "Không tìm thấy yêu cầu đặt hàng!"
-            });
-        }
-
-        // Chỉ cho phép update khi status = draft
-        if (request.status !== "draft") {
-            return res.status(400).json({
-                success: false,
-                message: "Chỉ có thể cập nhật yêu cầu ở trạng thái nháp!"
-            });
-        }
-
-        // Validate items nếu có
-        if (items && Array.isArray(items)) {
-            if (items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Danh sách sản phẩm không được để trống!"
-                });
-            }
-
-            // Validate từng item
-            for (const item of items) {
-                if (!item.productId || !mongoose.Types.ObjectId.isValid(item.productId)) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Product ID không hợp lệ!"
-                    });
-                }
-
-                if (typeof item.variantIndex !== "number" || item.variantIndex < 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Variant index không hợp lệ!"
-                    });
-                }
-
-                if (!item.quantity || item.quantity < 1) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Số lượng phải lớn hơn 0!"
-                    });
-                }
-
-                // Kiểm tra product có tồn tại
-                const product = await Product.findOne({
-                    _id: item.productId,
-                    status: "active",
-                    deleted: false
-                });
-
-                if (!product) {
-                    return res.status(404).json({
-                        success: false,
-                        message: `Không tìm thấy sản phẩm với ID: ${item.productId}!`
-                    });
-                }
-
-                // Kiểm tra variant có tồn tại
-                if (!product.variants || !product.variants[item.variantIndex]) {
-                    return res.status(404).json({
-                        success: false,
-                        message: `Không tìm thấy variant index ${item.variantIndex} của sản phẩm ${product.name}!`
-                    });
-                }
-            }
-
-            // Cập nhật items
-            (request as any).items = items.map((item: any) => ({
-                productId: new mongoose.Types.ObjectId(item.productId),
-                variantIndex: item.variantIndex,
-                variantHash: "", // Sẽ được tính lại
-                quantity: item.quantity,
-                notes: item.notes || ""
-            }));
-
-            // Tính lại tổng số lượng
-            (request as any).totalQuantity = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
-        }
-
-        // Cập nhật các trường khác nếu có
-        if (requestType) {
-            if (!["normal", "urgent", "scheduled"].includes(requestType)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Request type không hợp lệ! (normal, urgent, scheduled)"
-                });
-            }
-            (request as any).requestType = requestType;
-        }
-
-        if (priority) {
-            if (!["low", "medium", "high"].includes(priority)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Priority không hợp lệ! (low, medium, high)"
-                });
-            }
-            (request as any).priority = priority;
-        }
-
-        if (expectedDeliveryDate) {
-            (request as any).expectedDeliveryDate = new Date(expectedDeliveryDate);
-        }
-
-        if (reason !== undefined) {
-            (request as any).reason = reason;
-        }
-
-        if (notes !== undefined) {
-            (request as any).notes = notes;
-        }
-
-        (request as any).updatedBy = dealerId;
-        await request.save();
-
-        return res.json({
-            success: true,
-            message: "Cập nhật yêu cầu đặt hàng thành công!",
-            data: {
-                request
-            }
-        });
-    } catch (error: any) {
-        console.log(error);
-        return res.status(500).json({
-            success: false,
-            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
-        });
-    }
-};
-
-// [DELETE] /api/client/allocation-requests/:id - Xóa yêu cầu đặt hàng (chỉ draft)
-export const deleteRequest = async (req: RequestClient, res: Response) => {
-    try {
-        const requestId = req.params.id;
-        const dealerId = req["dealerId"];
-
-        if (!mongoose.Types.ObjectId.isValid(requestId)) {
-            return res.status(400).json({
-                success: false,
-                message: "ID yêu cầu không hợp lệ!"
-            });
-        }
-
-        const request = await AllocationRequest.findOne({
-            _id: requestId,
-            dealerId: new mongoose.Types.ObjectId(dealerId),
-            deleted: false
-        });
-
-        if (!request) {
-            return res.status(404).json({
-                success: false,
-                message: "Không tìm thấy yêu cầu đặt hàng!"
-            });
-        }
-
-        // Chỉ cho phép xóa khi status = draft
-        if (request.status !== "draft") {
-            return res.status(400).json({
-                success: false,
-                message: "Chỉ có thể xóa yêu cầu ở trạng thái nháp!"
-            });
-        }
-
-        // Soft delete
-        (request as any).deleted = true;
-        (request as any).deletedAt = new Date();
-        await request.save();
-
-        return res.json({
-            success: true,
-            message: "Xóa yêu cầu đặt hàng thành công!",
-            data: {
-                requestId: request._id.toString()
-            }
-        });
-    } catch (error: any) {
-        console.log(error);
-        return res.status(500).json({
             success: false,
             message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
         });

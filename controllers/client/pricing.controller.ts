@@ -166,6 +166,9 @@ export const getDealerDiscounts = async (req: RequestClient, res: Response) => {
 export const getDealerPromotions = async (req: RequestClient, res: Response) => {
     try {
         const dealerId = req.dealerId;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const status = req.query.status as string || "";
 
         if (!dealerId) {
             return res.status(401).json({
@@ -174,19 +177,26 @@ export const getDealerPromotions = async (req: RequestClient, res: Response) => 
             });
         }
 
-        const now = new Date();
         const query: any = {
             dealerId: new mongoose.Types.ObjectId(dealerId),
-            status: "active",
-            deleted: false,
-            startDate: { $lte: now },
-            endDate: { $gte: now }
+            deleted: false
         };
+
+        if (status) {
+            query.status = status;
+        }
+
+        const totalRecords = await DealerPromotion.countDocuments(query);
+        const totalPages = Math.ceil(totalRecords / limit);
+        const skip = (page - 1) * limit;
 
         const promotions = await DealerPromotion.find(query)
             .populate('productIds', 'name version images')
             .populate('promotionConfig.giftProductId', 'name version images')
-            .sort({ startDate: -1 });
+            .populate('createdBy', 'fullName')
+            .sort({ startDate: -1 })
+            .limit(limit)
+            .skip(skip);
 
         const formattedPromotions = promotions.map((promotion: any) => ({
             id: promotion._id.toString(),
@@ -199,19 +209,246 @@ export const getDealerPromotions = async (req: RequestClient, res: Response) => 
             conditions: promotion.conditions,
             startDate: promotion.startDate,
             endDate: promotion.endDate,
-            notes: promotion.notes
+            status: promotion.status,
+            notes: promotion.notes,
+            createdBy: promotion.createdBy?.fullName,
+            createdAt: promotion.createdAt
         }));
 
-        res.json({
+        return res.json({
             success: true,
             message: "Lấy danh sách khuyến mãi thành công!",
             data: {
-                promotions: formattedPromotions
+                promotions: formattedPromotions,
+                pagination: {
+                    page,
+                    limit,
+                    totalRecords,
+                    totalPages
+                }
             }
         });
     } catch (error: any) {
         console.log(error);
-        res.status(500).json({
+        return res.status(500).json({
+            success: false,
+            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
+        });
+    }
+};
+
+// POST /api/client/promotions
+// Tạo khuyến mãi mới
+export const createPromotion = async (req: RequestClient, res: Response) => {
+    try {
+        const dealerId = req.dealerId;
+        const userId = req.userId;
+
+        if (!dealerId) {
+            return res.status(401).json({
+                success: false,
+                message: "Không tìm thấy thông tin đại lý!"
+            });
+        }
+
+        const {
+            promotionName,
+            promotionType,
+            promotionValue,
+            promotionConfig,
+            applyTo,
+            productIds,
+            conditions,
+            startDate,
+            endDate,
+            notes
+        } = req.body;
+
+        // Validation
+        if (!promotionName || !promotionType || !startDate || !endDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Thiếu thông tin bắt buộc!"
+            });
+        }
+
+        // Check dates
+        if (new Date(startDate) >= new Date(endDate)) {
+            return res.status(400).json({
+                success: false,
+                message: "Ngày kết thúc phải sau ngày bắt đầu!"
+            });
+        }
+
+        const promotion = new DealerPromotion({
+            dealerId: new mongoose.Types.ObjectId(dealerId),
+            promotionName,
+            promotionType,
+            promotionValue: promotionValue || 0,
+            promotionConfig: promotionConfig || {},
+            applyTo: applyTo || "all_products",
+            productIds: productIds || [],
+            conditions: conditions || {},
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+            status: "active",
+            notes,
+            createdBy: userId ? new mongoose.Types.ObjectId(userId) : undefined
+        });
+
+        await promotion.save();
+
+        return res.status(201).json({
+            success: true,
+            message: "Tạo khuyến mãi thành công!",
+            data: {
+                id: promotion._id.toString(),
+                promotionName: promotion.promotionName,
+                promotionType: promotion.promotionType,
+                startDate: promotion.startDate,
+                endDate: promotion.endDate,
+                status: promotion.status
+            }
+        });
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
+        });
+    }
+};
+
+// PATCH /api/client/promotions/:id
+// Cập nhật khuyến mãi
+export const updatePromotion = async (req: RequestClient, res: Response) => {
+    try {
+        const dealerId = req.dealerId;
+        const userId = req.userId;
+        const promotionId = req.params.id;
+
+        if (!dealerId) {
+            return res.status(401).json({
+                success: false,
+                message: "Không tìm thấy thông tin đại lý!"
+            });
+        }
+
+        const promotion = await DealerPromotion.findOne({
+            _id: promotionId,
+            dealerId: new mongoose.Types.ObjectId(dealerId),
+            deleted: false
+        });
+
+        if (!promotion) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy khuyến mãi!"
+            });
+        }
+
+        const {
+            promotionName,
+            promotionType,
+            promotionValue,
+            promotionConfig,
+            applyTo,
+            productIds,
+            conditions,
+            startDate,
+            endDate,
+            status,
+            notes
+        } = req.body;
+
+        // Check dates if provided
+        const newStartDate = startDate ? new Date(startDate) : promotion.startDate;
+        const newEndDate = endDate ? new Date(endDate) : promotion.endDate;
+
+        if (newStartDate >= newEndDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Ngày kết thúc phải sau ngày bắt đầu!"
+            });
+        }
+
+        // Update fields
+        if (promotionName !== undefined) promotion.promotionName = promotionName;
+        if (promotionType !== undefined) promotion.promotionType = promotionType;
+        if (promotionValue !== undefined) promotion.promotionValue = promotionValue;
+        if (promotionConfig !== undefined) promotion.promotionConfig = promotionConfig;
+        if (applyTo !== undefined) promotion.applyTo = applyTo;
+        if (productIds !== undefined) promotion.productIds = productIds;
+        if (conditions !== undefined) promotion.conditions = conditions;
+        if (startDate !== undefined) promotion.startDate = newStartDate;
+        if (endDate !== undefined) promotion.endDate = newEndDate;
+        if (status !== undefined) promotion.status = status;
+        if (notes !== undefined) promotion.notes = notes;
+
+        (promotion as any).updatedBy = userId ? new mongoose.Types.ObjectId(userId) : undefined;
+
+        await promotion.save();
+
+        return res.json({
+            success: true,
+            message: "Cập nhật khuyến mãi thành công!",
+            data: {
+                id: promotion._id.toString(),
+                promotionName: promotion.promotionName,
+                promotionType: promotion.promotionType,
+                startDate: promotion.startDate,
+                endDate: promotion.endDate,
+                status: promotion.status
+            }
+        });
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
+        });
+    }
+};
+
+// DELETE /api/client/promotions/:id
+// Xóa khuyến mãi (soft delete)
+export const deletePromotion = async (req: RequestClient, res: Response) => {
+    try {
+        const dealerId = req.dealerId;
+        const promotionId = req.params.id;
+
+        if (!dealerId) {
+            return res.status(401).json({
+                success: false,
+                message: "Không tìm thấy thông tin đại lý!"
+            });
+        }
+
+        const promotion = await DealerPromotion.findOne({
+            _id: promotionId,
+            dealerId: new mongoose.Types.ObjectId(dealerId),
+            deleted: false
+        });
+
+        if (!promotion) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy khuyến mãi!"
+            });
+        }
+
+        (promotion as any).deleted = true;
+        (promotion as any).deletedAt = new Date();
+
+        await promotion.save();
+
+        return res.json({
+            success: true,
+            message: "Xóa khuyến mãi thành công!"
+        });
+    } catch (error: any) {
+        console.log(error);
+        return res.status(500).json({
             success: false,
             message: "Đã có lỗi xảy ra, vui lòng thử lại sau!"
         });
