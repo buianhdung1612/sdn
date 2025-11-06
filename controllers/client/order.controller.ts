@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import Order from '../../models/order.model';
-import Customer from '../../models/customer.model';
 import Product from '../../models/product.model';
 import DealerInventory from '../../models/dealer-inventory.model';
 import mongoose from 'mongoose';
@@ -16,7 +15,6 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
         const status = req.query.status as string || "";
-        const customerId = req.query.customerId as string || "";
         const keyword = req.query.keyword as string || "";
 
         if (!dealerId) {
@@ -35,10 +33,6 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
             query.status = status;
         }
 
-        if (customerId) {
-            query.customerId = new mongoose.Types.ObjectId(customerId);
-        }
-
         if (keyword) {
             query.search = new RegExp(keyword.toLowerCase(), 'i');
         }
@@ -48,7 +42,6 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
         const skip = (page - 1) * limit;
 
         const orders = await Order.find(query)
-            .populate('customerId', 'fullName phone email')
             .populate('items.productId', 'name version images')
             .sort({ createdAt: -1 })
             .limit(limit)
@@ -57,12 +50,12 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
         const formattedOrders = orders.map((order: any) => ({
             id: order._id.toString(),
             orderNumber: order.orderNumber,
-            customer: order.customerId ? {
-                id: order.customerId._id.toString(),
-                fullName: order.customerId.fullName,
-                phone: order.customerId.phone,
-                email: order.customerId.email
-            } : order.customerSnapshot,
+            customer: {
+                fullName: order.customerInfo.fullName,
+                phone: order.customerInfo.phone,
+                email: order.customerInfo.email,
+                address: order.customerInfo.address
+            },
             totalItems: order.items.length,
             totalQuantity: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
             subtotal: order.subtotal,
@@ -116,7 +109,6 @@ export const getOrderDetail = async (req: RequestClient, res: Response) => {
             dealerId: new mongoose.Types.ObjectId(dealerId),
             deleted: false
         })
-            .populate('customerId', 'fullName phone email address')
             .populate('items.productId', 'name version images basePrice')
             .populate('createdBy', 'fullName email')
             .populate('updatedBy', 'fullName email');
@@ -161,13 +153,12 @@ export const getOrderDetail = async (req: RequestClient, res: Response) => {
         const response = {
             id: orderData._id.toString(),
             orderNumber: orderData.orderNumber,
-            customer: orderData.customerId ? {
-                id: orderData.customerId._id.toString(),
-                fullName: orderData.customerId.fullName,
-                phone: orderData.customerId.phone,
-                email: orderData.customerId.email,
-                address: orderData.customerId.address
-            } : orderData.customerSnapshot,
+            customer: {
+                fullName: orderData.customerInfo.fullName,
+                phone: orderData.customerInfo.phone,
+                email: orderData.customerInfo.email,
+                address: orderData.customerInfo.address
+            },
             items: formattedItems,
             subtotal: orderData.subtotal,
             discountAmount: orderData.discountAmount,
@@ -217,18 +208,13 @@ export const createOrder = async (req: RequestClient, res: Response) => {
             });
         }
 
-        const { customerId, items, customerNotes, paymentMethod, shippingAddress } = req.body;
+        const { customerInfo, items, customerNotes, paymentMethod, shippingAddress } = req.body;
 
-        // Validate customer
-        const customer = await Customer.findOne({
-            _id: new mongoose.Types.ObjectId(customerId),
-            deleted: false
-        });
-
-        if (!customer) {
-            return res.status(404).json({
+        // Validate customer info
+        if (!customerInfo || !customerInfo.fullName || !customerInfo.phone) {
+            return res.status(400).json({
                 success: false,
-                message: "Không tìm thấy thông tin khách hàng!"
+                message: "Vui lòng cung cấp đầy đủ thông tin khách hàng (tên và số điện thoại)!"
             });
         }
 
@@ -337,18 +323,17 @@ export const createOrder = async (req: RequestClient, res: Response) => {
         const newOrder = new Order({
             orderNumber: orderNumber,
             dealerId: new mongoose.Types.ObjectId(dealerId),
-            customerId: new mongoose.Types.ObjectId(customerId),
+            customerInfo: {
+                fullName: customerInfo.fullName,
+                phone: customerInfo.phone,
+                email: customerInfo.email || "",
+                address: customerInfo.address || ""
+            },
             items: processedItems,
             subtotal: subtotal,
             discountAmount: discountAmount,
             taxAmount: taxAmount,
             totalAmount: totalAmount,
-            customerSnapshot: {
-                fullName: customer.fullName,
-                phone: customer.phone,
-                email: customer.email,
-                address: customer.address
-            },
             status: "draft",
             statusHistory: [{
                 status: "draft",

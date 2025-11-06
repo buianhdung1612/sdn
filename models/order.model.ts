@@ -76,10 +76,18 @@ const orderSchema = new Schema(
             ref: "Dealer",
             required: true
         },
-        customerId: {
-            type: Schema.Types.ObjectId,
-            ref: "Customer",
-            required: true
+        // Thông tin khách hàng (không cần customerId)
+        customerInfo: {
+            fullName: {
+                type: String,
+                required: true
+            },
+            phone: {
+                type: String,
+                required: true
+            },
+            email: String,
+            address: String
         },
         items: [orderItemSchema],
         
@@ -103,14 +111,6 @@ const orderSchema = new Schema(
             type: Number,
             required: true,
             min: 0
-        },
-
-        // Thông tin khách hàng (snapshot)
-        customerSnapshot: {
-            fullName: String,
-            phone: String,
-            email: String,
-            address: String
         },
 
         // Trạng thái đơn hàng
@@ -175,19 +175,19 @@ const orderSchema = new Schema(
 
 // Index
 orderSchema.index({ dealerId: 1, status: 1 });
-orderSchema.index({ customerId: 1, status: 1 });
 orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ search: 1 });
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ deleted: 1 });
+orderSchema.index({ 'customerInfo.phone': 1 });
 
 // Pre-save middleware: Generate search field
 orderSchema.pre('save', function(next) {
     const searchFields = [
         this.orderNumber,
-        this.customerSnapshot?.fullName,
-        this.customerSnapshot?.phone,
-        this.customerSnapshot?.email
+        this.customerInfo?.fullName,
+        this.customerInfo?.phone,
+        this.customerInfo?.email
     ].filter(Boolean);
     
     this.search = convertToSlug(searchFields.join(' '));

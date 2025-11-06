@@ -70,13 +70,31 @@ components:
     CreateOrderRequest:
       type: object
       required:
-        - customerId
+        - customerInfo
         - items
       properties:
-        customerId:
-          type: string
-          description: ID khách hàng
-          example: "674a1234567890abcdef1234"
+        customerInfo:
+          type: object
+          required:
+            - fullName
+            - phone
+          properties:
+            fullName:
+              type: string
+              description: Tên khách hàng
+              example: "Nguyễn Văn An"
+            phone:
+              type: string
+              description: Số điện thoại
+              example: "0901234567"
+            email:
+              type: string
+              description: Email (không bắt buộc)
+              example: "nguyenvanan@gmail.com"
+            address:
+              type: string
+              description: Địa chỉ (không bắt buộc)
+              example: "123 Nguyễn Huệ, Quận 1, TP.HCM"
         items:
           type: array
           description: Danh sách sản phẩm trong đơn hàng
@@ -121,9 +139,6 @@ components:
         customer:
           type: object
           properties:
-            id:
-              type: string
-              example: "674a1234567890abcdef1234"
             fullName:
               type: string
               example: "Nguyễn Văn An"
@@ -133,6 +148,9 @@ components:
             email:
               type: string
               example: "nguyenvanan@gmail.com"
+            address:
+              type: string
+              example: "123 Nguyễn Huệ, Quận 1, TP.HCM"
         totalItems:
           type: integer
           description: Số loại sản phẩm
@@ -198,9 +216,6 @@ components:
         customer:
           type: object
           properties:
-            id:
-              type: string
-              example: "674a1234567890abcdef1234"
             fullName:
               type: string
               example: "Nguyễn Văn An"
@@ -2774,12 +2789,6 @@ paths:
             enum: [draft, pending, confirmed, processing, delivering, completed, cancelled, refunded]
           description: Lọc theo trạng thái
           example: "pending"
-        - name: customerId
-          in: query
-          schema:
-            type: string
-          description: Lọc theo khách hàng
-          example: "674a1234567890abcdef1234"
         - name: keyword
           in: query
           schema:
@@ -2834,7 +2843,11 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateOrderRequest'
             example:
-              customerId: "674a1234567890abcdef1234"
+              customerInfo:
+                fullName: "Nguyễn Văn An"
+                phone: "0901234567"
+                email: "nguyenvanan@gmail.com"
+                address: "123 Nguyễn Huệ, Quận 1, TP.HCM"
               items:
                 - productId: "673b1111222233334444aaaa"
                   variantIndex: 0
