@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import accountRoutes from "./account.route"
 import productRoutes from "./product.route"
 import stationRoutes from "./station.route"
-import aiRoutes from "./ai.route"
+import aiChatbotRoutes from "./ai-chatbot.route"
 import inventoryRoutes from "./inventory.route"
 import allocationRequestRoutes from "./allocation-request.route"
 import allocationRoutes from "./allocation.route"
@@ -37,6 +37,6 @@ router.use('/allocations', authMiddleware.verifyToken, allocationRoutes);
 router.use('/pricing', authMiddleware.verifyToken, pricingRoutes);
 router.use('/orders', authMiddleware.verifyToken, orderRoutes);
 router.use('/station', stationRoutes);
-router.use('/ai', aiRoutes);
+router.use('/ai-chatbot', aiChatbotRoutes);
 
 export default router;

@@ -2,6 +2,22 @@ extends ../layouts/default.pug
 
 block main
   if (permissions.includes("dashboard"))
+    // Chatbot AI Card
+    .row.mb-3
+      .col-12
+        .card.border-primary
+          .card-body
+            .row.align-items-center
+              .col
+                h5.card-title.mb-2
+                  i.icofont-robot.me-2.text-primary
+                  | Chatbot AI Assistant
+                p.text-muted.mb-0
+                  | Giao tiếp với AI để tìm hiểu hệ thống, truy vấn dữ liệu và dự báo nhu cầu sản xuất & phân phối
+              .col-auto
+                a.btn.btn-primary.btn-lg(href=`/${pathAdmin}/ai-chatbot`)
+                  i.icofont-robot.me-2
+                  | Mở Chatbot AI
     .row
       .col-md-12.col-lg-12.col-xl-4
         .row

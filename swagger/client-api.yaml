@@ -24,6 +24,8 @@ tags:
     description: API giá sỉ, chiết khấu và khuyến mãi
   - name: Orders
     description: API quản lý đơn hàng (bao gồm thông tin khách hàng)
+  - name: AI Chatbot
+    description: Chatbot AI giao tiếp với người dùng, đọc database và dự báo nhu cầu cho kế hoạch sản xuất & phân phối
 
 components:
   securitySchemes:
