@@ -2,43 +2,32 @@ openapi: 3.0.0
 info:
   title: Client API - React Native
   description: API cho ứng dụng client (React Native) - Quản lý đại lý và nhân viên bán hàng
-  version: 1.0.0
+  version: 2.0.0
 servers:
   - url: http://localhost:3000/api/client
     description: Development server
   - url: https://your-domain.com/api/client
     description: Production server
-  - url: http://localhost:3000
-    description: Root server (Admin & Client absolute paths)
-  - url: https://your-domain.com
-    description: Root Production server
 
 tags:
   - name: Authentication
-    description: API xác thực cho ứng dụng client
+    description: API xác thực
   - name: Products
     description: API quản lý sản phẩm
   - name: Inventory
-    description: API quản lý tồn kho của đại lý
+    description: API quản lý tồn kho
   - name: Allocation Request
     description: API đặt hàng xe từ Hãng
   - name: Allocation Tracking
     description: API theo dõi xe được phân bổ
   - name: Pricing & Promotion
     description: API giá sỉ, chiết khấu và khuyến mãi
-  - name: Stations
-    description: API dành cho Nhân viên Trạm sạc (theo dõi & báo cáo sự cố)
-  - name: Analytics
-    description: Báo cáo doanh thu và tần suất sử dụng (Admin)
-  - name: AI
-    description: Dự báo nhu cầu và gợi ý nâng cấp hạ tầng (Admin)
-  - name: Customer
+  - name: Customers
     description: API quản lý khách hàng
-  - name: Test Drive
+  - name: Test Drives
     description: API quản lý lịch hẹn lái thử
   - name: Customer Feedback
     description: API quản lý phản hồi khách hàng
-
 
 components:
   securitySchemes:
@@ -47,59 +36,641 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token từ API đăng nhập. Format: Bearer {token}
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: tokenAdmin
-      description: Cookie xác thực Admin (đăng nhập từ trang Admin)
 
   schemas:
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-          description: ID của user
-        fullName:
-          type: string
-          description: Họ và tên
-        email:
-          type: string
-          format: email
-          description: Email
-        role:
-          type: string
-          description: Vai trò (quản lý đại lý hoặc nhân viên bán hàng)
-
-    Dealer:
-      type: object
-      properties:
-        id:
-          type: string
-          description: ID của đại lý
-        name:
-          type: string
-          description: Tên đại lý
-        code:
-          type: string
-          description: Mã đại lý
-
-    LoginRequest:
+    # ========== CUSTOMER SCHEMAS ==========
+    CustomerRegisterRequest:
       type: object
       required:
-        - email
-        - password
+        - fullName
+        - phone
       properties:
+        fullName:
+          type: string
+          description: Họ và tên khách hàng
+          example: "Nguyễn Văn An"
+        phone:
+          type: string
+          description: Số điện thoại
+          example: "0901234567"
         email:
           type: string
           format: email
-          example: dealer@example.com
-        password:
+          description: Email khách hàng
+          example: "nguyenvanan@gmail.com"
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: "123 Nguyễn Huệ"
+            ward:
+              type: string
+              example: "Phường Bến Nghé"
+            district:
+              type: string
+              example: "Quận 1"
+            city:
+              type: string
+              example: "TP. Hồ Chí Minh"
+        idCard:
           type: string
-          format: password
-          example: password123
+          description: Số CMND/CCCD
+          example: "079123456789"
+        dateOfBirth:
+          type: string
+          format: date
+          description: Ngày sinh
+          example: "1990-05-15"
 
-    LoginResponse:
+    CustomerResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "674a1234567890abcdef1234"
+        fullName:
+          type: string
+          example: "Nguyễn Văn An"
+        phone:
+          type: string
+          example: "0901234567"
+        email:
+          type: string
+          example: "nguyenvanan@gmail.com"
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+              example: "123 Nguyễn Huệ"
+            ward:
+              type: string
+              example: "Phường Bến Nghé"
+            district:
+              type: string
+              example: "Quận 1"
+            city:
+              type: string
+              example: "TP. Hồ Chí Minh"
+        idCard:
+          type: string
+          example: "079123456789"
+        dateOfBirth:
+          type: string
+          example: "1990-05-15"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        status:
+          type: string
+          enum: [active, inactive]
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00.000Z"
+
+    # ========== TEST DRIVE SCHEMAS ==========
+    TestDriveCreateRequest:
+      type: object
+      required:
+        - customerId
+        - productId
+        - variantIndex
+        - scheduledDate
+        - scheduledTime
+        - location
+      properties:
+        customerId:
+          type: string
+          description: ID khách hàng
+          example: "674a1234567890abcdef1234"
+        productId:
+          type: string
+          description: ID sản phẩm xe
+          example: "673b1111222233334444aaaa"
+        variantIndex:
+          type: integer
+          description: Chỉ số variant muốn lái thử
+          example: 0
+        scheduledDate:
+          type: string
+          format: date
+          description: Ngày hẹn
+          example: "2025-02-01"
+        scheduledTime:
+          type: string
+          description: Giờ hẹn (HH:mm format)
+          example: "14:30"
+        location:
+          type: object
+          required:
+            - address
+          properties:
+            address:
+              type: string
+              example: "Showroom ABC - 456 Lê Lợi, Q1, TP.HCM"
+            lat:
+              type: number
+              example: 10.7769
+            lng:
+              type: number
+              example: 106.7009
+        notes:
+          type: string
+          description: Ghi chú thêm
+          example: "Khách muốn test công nghệ tự lái"
+
+    TestDriveResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "674c5555666677778888dddd"
+        testDriveNumber:
+          type: string
+          example: "TD-20250201-0001"
+        customerId:
+          type: string
+          example: "674a1234567890abcdef1234"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        productId:
+          type: string
+          example: "673b1111222233334444aaaa"
+        variantIndex:
+          type: integer
+          example: 0
+        scheduledDate:
+          type: string
+          example: "2025-02-01"
+        scheduledTime:
+          type: string
+          example: "14:30"
+        location:
+          type: object
+          properties:
+            address:
+              type: string
+              example: "Showroom ABC - 456 Lê Lợi, Q1, TP.HCM"
+        status:
+          type: string
+          enum: [pending, confirmed, completed, cancelled, no_show]
+          example: "pending"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-20T09:15:00.000Z"
+
+    # ========== FEEDBACK SCHEMAS ==========
+    FeedbackCreateRequest:
+      type: object
+      required:
+        - customerId
+        - type
+        - category
+        - subject
+        - content
+      properties:
+        customerId:
+          type: string
+          description: ID khách hàng
+          example: "674a1234567890abcdef1234"
+        orderId:
+          type: string
+          description: ID đơn hàng (nếu liên quan)
+          example: "674d7777888899990000eeee"
+        type:
+          type: string
+          enum: [feedback, complaint, inquiry, suggestion]
+          description: Loại phản hồi
+          example: "complaint"
+        category:
+          type: string
+          enum: [product_quality, service, delivery, pricing, technical, other]
+          description: Danh mục
+          example: "product_quality"
+        subject:
+          type: string
+          description: Tiêu đề
+          example: "Pin xe sạc chậm hơn mô tả"
+        content:
+          type: string
+          description: Nội dung chi tiết
+          example: "Xe VF8 của tôi sạc đầy mất 10 giờ thay vì 8 giờ như quảng cáo. Pin chỉ chạy được 350km thay vì 400km."
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+          description: Mức độ ưu tiên
+          example: "high"
+
+    FeedbackResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "674e9999aaaabbbbccccffff"
+        feedbackNumber:
+          type: string
+          example: "FB-20250120-0001"
+        customerId:
+          type: string
+          example: "674a1234567890abcdef1234"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        orderId:
+          type: string
+          example: "674d7777888899990000eeee"
+        type:
+          type: string
+          example: "complaint"
+        category:
+          type: string
+          example: "product_quality"
+        subject:
+          type: string
+          example: "Pin xe sạc chậm hơn mô tả"
+        content:
+          type: string
+          example: "Xe VF8 của tôi sạc đầy mất 10 giờ..."
+        priority:
+          type: string
+          example: "high"
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          example: "open"
+        response:
+          type: string
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-20T11:45:00.000Z"
+
+    FeedbackReplyRequest:
+      type: object
+      required:
+        - response
+      properties:
+        response:
+          type: string
+          description: Nội dung trả lời
+          example: "Cảm ơn bạn đã phản hồi. Chúng tôi sẽ kiểm tra pin xe và liên hệ lại trong 24h."
+
+    # ========== ALLOCATION REQUEST SCHEMAS ==========
+    AllocationRequestCreateRequest:
+      type: object
+      required:
+        - items
+        - requestType
+      properties:
+        items:
+          type: array
+          description: Danh sách xe cần đặt
+          items:
+            type: object
+            required:
+              - productId
+              - variantIndex
+              - quantity
+            properties:
+              productId:
+                type: string
+                example: "673b1111222233334444aaaa"
+              variantIndex:
+                type: integer
+                example: 0
+              quantity:
+                type: integer
+                minimum: 1
+                example: 5
+              notes:
+                type: string
+                example: "Cần giao trước Tết"
+        requestType:
+          type: string
+          enum: [urgent, normal, scheduled]
+          description: Loại yêu cầu
+          example: "urgent"
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+          example: "high"
+        expectedDeliveryDate:
+          type: string
+          format: date
+          description: Ngày giao mong muốn
+          example: "2025-02-15"
+        reason:
+          type: string
+          description: Lý do đặt hàng
+          example: "Tăng cường tồn kho cho đợt khuyến mãi Tết 2025"
+        notes:
+          type: string
+          description: Ghi chú thêm
+          example: "Ưu tiên màu trắng và đỏ"
+
+    AllocationRequestResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "674f1111222233334444gggg"
+        requestNumber:
+          type: string
+          example: "AR-20250120-0001"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+                example: "673b1111222233334444aaaa"
+              variantIndex:
+                type: integer
+                example: 0
+              quantity:
+                type: integer
+                example: 5
+              notes:
+                type: string
+                example: "Cần giao trước Tết"
+        totalQuantity:
+          type: integer
+          example: 5
+        requestType:
+          type: string
+          example: "urgent"
+        priority:
+          type: string
+          example: "high"
+        status:
+          type: string
+          enum: [draft, submitted, approved, rejected, completed, cancelled]
+          example: "draft"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-20T08:00:00.000Z"
+
+    # ========== INVENTORY SCHEMAS ==========
+    InventoryResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "6750aaaabbbbccccddddeeee"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        productId:
+          type: string
+          example: "673b1111222233334444aaaa"
+        variantIndex:
+          type: integer
+          example: 0
+        stock:
+          type: integer
+          description: Số lượng có sẵn
+          example: 15
+        reservedStock:
+          type: integer
+          description: Số lượng đã đặt chưa xuất
+          example: 3
+        availableStock:
+          type: integer
+          description: Số lượng có thể bán (stock - reservedStock)
+          example: 12
+        product:
+          type: object
+          description: Thông tin sản phẩm (populated)
+          properties:
+            _id:
+              type: string
+              example: "673b1111222233334444aaaa"
+            name:
+              type: string
+              example: "VinFast VF8"
+            version:
+              type: string
+              example: "2024"
+            variants:
+              type: array
+              items:
+                type: object
+                properties:
+                  attributeValue:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Màu trắng", "Nội thất da nâu", "Pin 87.7 kWh"]
+                  price:
+                    type: number
+                    example: 1050000000
+        lastUpdatedAt:
+          type: string
+          format: date-time
+          example: "2025-01-19T16:20:00.000Z"
+
+    # ========== PRICING SCHEMAS ==========
+    PricingResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "6751bbbbccccddddeeee1111"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        productId:
+          type: string
+          example: "673b1111222233334444aaaa"
+        variantIndex:
+          type: integer
+          description: null = áp dụng cho tất cả variants
+          example: 0
+        wholesalePrice:
+          type: number
+          description: Giá sỉ (VND)
+          example: 980000000
+        effectiveDate:
+          type: string
+          format: date
+          example: "2025-01-01"
+        expiryDate:
+          type: string
+          format: date
+          example: "2025-03-31"
+        status:
+          type: string
+          enum: [active, inactive]
+          example: "active"
+
+    DiscountResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "6752ccccddddeeee22223333"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        discountName:
+          type: string
+          example: "Chiết khấu mua số lượng lớn"
+        discountType:
+          type: string
+          enum: [percentage, fixed_amount]
+          example: "percentage"
+        discountValue:
+          type: number
+          description: "Nếu percentage: 5 = 5%, nếu fixed_amount: số tiền VND"
+          example: 5
+        applyTo:
+          type: string
+          enum: [all_products, specific_products, product_category]
+          example: "all_products"
+        minQuantity:
+          type: integer
+          description: Số lượng tối thiểu
+          example: 10
+        minAmount:
+          type: number
+          description: Giá trị đơn hàng tối thiểu (VND)
+          example: 5000000000
+        effectiveDate:
+          type: string
+          format: date
+          example: "2025-01-01"
+        expiryDate:
+          type: string
+          format: date
+          example: "2025-12-31"
+        status:
+          type: string
+          example: "active"
+
+    PromotionResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "6753ddddeeee33334444ffff"
+        dealerId:
+          type: string
+          example: "673a9876543210fedcba9876"
+        promotionName:
+          type: string
+          example: "Tặng phụ kiện khi mua VF8"
+        promotionType:
+          type: string
+          enum: [buy_x_get_y, discount_percentage, fixed_discount, free_gift]
+          example: "free_gift"
+        promotionConfig:
+          type: object
+          description: Cấu hình tùy theo loại khuyến mãi
+          example:
+            giftProductId: "6754eeee5555666677778888"
+            giftDescription: "Bộ phụ kiện cao cấp VinFast"
+        applyTo:
+          type: string
+          enum: [all_products, specific_products]
+          example: "specific_products"
+        productIds:
+          type: array
+          items:
+            type: string
+          example: ["673b1111222233334444aaaa"]
+        startDate:
+          type: string
+          format: date
+          example: "2025-02-01"
+        endDate:
+          type: string
+          format: date
+          example: "2025-02-15"
+        status:
+          type: string
+          enum: [active, inactive, expired]
+          example: "active"
+
+    CalculatePriceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            productId:
+              type: string
+              example: "673b1111222233334444aaaa"
+            variantIndex:
+              type: integer
+              example: 0
+            quantity:
+              type: integer
+              example: 10
+            basePrice:
+              type: number
+              description: Giá sỉ gốc/đơn vị (VND)
+              example: 980000000
+            subtotal:
+              type: number
+              description: Tổng trước chiết khấu (VND)
+              example: 9800000000
+            discounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "Chiết khấu mua số lượng lớn"
+                  type:
+                    type: string
+                    example: "percentage"
+                  value:
+                    type: number
+                    example: 5
+                  amount:
+                    type: number
+                    description: Số tiền được giảm (VND)
+                    example: 490000000
+            totalDiscount:
+              type: number
+              description: Tổng chiết khấu (VND)
+              example: 490000000
+            finalPrice:
+              type: number
+              description: Tổng tiền sau chiết khấu (VND)
+              example: 9310000000
+            promotions:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "Tặng phụ kiện khi mua VF8"
+                  type:
+                    type: string
+                    example: "free_gift"
+                  description:
+                    type: string
+                    example: "Bộ phụ kiện cao cấp VinFast"
+
+    # ========== COMMON SCHEMAS ==========
+    SuccessResponse:
       type: object
       properties:
         success:
@@ -107,17 +678,9 @@ components:
           example: true
         message:
           type: string
-          example: Đăng nhập thành công!
+          example: "Thao tác thành công"
         data:
           type: object
-          properties:
-            token:
-              type: string
-              description: JWT token để xác thực các request tiếp theo
-            user:
-              $ref: '#/components/schemas/User'
-            dealer:
-              $ref: '#/components/schemas/Dealer'
 
     ErrorResponse:
       type: object
@@ -127,1076 +690,1342 @@ components:
           example: false
         message:
           type: string
-          example: Email hoặc mật khẩu không chính xác!
-
-    Category:
-      type: object
-      properties:
-        id:
+          example: "Lỗi xảy ra"
+        error:
           type: string
-        name:
-          type: string
-        slug:
-          type: string
-
-    Variant:
-      type: object
-      properties:
-        attributeValue:
-          type: array
-          items:
-            type: object
-        stock:
-          type: number
-        priceOld:
-          type: number
-        priceNew:
-          type: number
-        status:
-          type: boolean
-
-    Product:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        version:
-          type: string
-        slug:
-          type: string
-        images:
-          type: array
-          items:
-            type: string
-        basePrice:
-          type: number
-        rangeKm:
-          type: number
-        batteryKWh:
-          type: number
-        maxPowerHP:
-          type: number
-        categories:
-          type: array
-          items:
-            type: string
-        categoryIds:
-          type: array
-          items:
-            type: string
-        variants:
-          type: array
-          items:
-            $ref: '#/components/schemas/Variant'
-        totalStock:
-          type: number
-        status:
-          type: string
-          enum: [draft, active, inactive]
-
-    Pagination:
-      type: object
-      properties:
-        page:
-          type: integer
-          example: 1
-        limit:
-          type: integer
-          example: 20
-        totalRecords:
-          type: integer
-          example: 100
-        totalPages:
-          type: integer
-          example: 5
-
-    ProductsResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: Lấy danh sách sản phẩm thành công!
-        data:
-          type: object
-          properties:
-            products:
-              type: array
-              items:
-                $ref: '#/components/schemas/Product'
-            pagination:
-              $ref: '#/components/schemas/Pagination'
-
-    ProductDetail:
-      allOf:
-        - $ref: '#/components/schemas/Product'
-        - type: object
-          properties:
-            attributes:
-              type: array
-              items:
-                type: object
-            content:
-              type: string
-            categories:
-              type: array
-              items:
-                $ref: '#/components/schemas/Category'
-
-    ProductDetailResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: Lấy thông tin sản phẩm thành công!
-        data:
-          type: object
-          properties:
-            product:
-              $ref: '#/components/schemas/ProductDetail'
-
-    # =========== Stations (Client) schemas ==========
-    ChargingPoint:
-      type: object
-      properties:
-        id:
-          type: string
-        identifier:
-          type: string
-        status:
-          type: string
-          enum: [online, offline, occupied, maintenance]
-        powerKW:
-          type: number
-        lastHeartbeatAt:
-          type: string
-          format: date-time
-
-    Station:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        code:
-          type: string
-        status:
-          type: string
-          enum: [online, offline, maintenance]
-        location:
-          type: object
-          properties:
-            address:
-              type: string
-            lat:
-              type: number
-            lng:
-              type: number
-        totalPoints:
-          type: integer
-        onlinePoints:
-          type: integer
-        occupiedPoints:
-          type: integer
-
-    StationStatusResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          type: object
-          properties:
-            station:
-              $ref: '#/components/schemas/Station'
-            chargingPoints:
-              type: array
-              items:
-                $ref: '#/components/schemas/ChargingPoint'
-
-    IncidentReportRequest:
-      type: object
-      required: [type, description]
-      properties:
-        type:
-          type: string
-          example: hardware_failure
-        description:
-          type: string
-          minLength: 5
-          example: "Màn hình cột sạc CP-03 không hiển thị."
-        severity:
-          type: string
-          enum: [low, medium, high]
-          default: low
-        images:
-          type: array
-          items:
-            type: string
-            format: uri
-
-    IncidentReportResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          type: object
-          properties:
-            id:
-              type: string
-
-    # =========== Admin Analytics & AI schemas ==========
-    RevenueStation:
-      type: object
-      properties:
-        stationId:
-          type: string
-        stationName:
-          type: string
-        stationCode:
-          type: string
-        region:
-          type: string
-          nullable: true
-        totalAmount:
-          type: number
-        totalEnergyKWh:
-          type: number
-        sessions:
-          type: integer
-
-    RevenueRegion:
-      type: object
-      properties:
-        region:
-          type: string
-          nullable: true
-        totalAmount:
-          type: number
-        totalEnergyKWh:
-          type: number
-        sessions:
-          type: integer
-
-    RevenueTime:
-      type: object
-      properties:
-        period:
-          type: string
-          example: 2025-10-31
-        totalAmount:
-          type: number
-        totalEnergyKWh:
-          type: number
-        sessions:
-          type: integer
-
-    UsageByStation:
-      type: object
-      properties:
-        stationId:
-          type: string
-        stationName:
-          type: string
-        stationCode:
-          type: string
-        region:
-          type: string
-          nullable: true
-        sessions:
-          type: integer
-        totalEnergyKWh:
-          type: number
-
-    PeakHour:
-      type: object
-      properties:
-        hour:
-          type: integer
-          minimum: 0
-          maximum: 23
-        sessions:
-          type: integer
-
-    ForecastRequest:
-      type: object
-      required: [stationId]
-      properties:
-        stationId:
-          type: string
-        horizonDays:
-          type: integer
-          default: 14
-        targetUtilization:
-          type: number
-          default: 0.7
-        includeLLMExplanation:
-          type: boolean
-          default: true
-
-    ForecastPoint:
-      type: object
-      properties:
-        date:
-          type: string
-          example: 2025-11-06
-        sessions:
-          type: integer
-
-    ForecastResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          type: object
-          properties:
-            station:
-              type: object
-              properties:
-                id: { type: string }
-                name: { type: string }
-                code: { type: string }
-                region: { type: string, nullable: true }
-                points: { type: integer }
-            horizonDays:
-              type: integer
-            forecast:
-              type: array
-              items:
-                $ref: '#/components/schemas/ForecastPoint'
-            stats:
-              type: object
-              properties:
-                overallAvgDailySessions: { type: number }
-                avgSessionDurationHours: { type: number }
-                currentUtilAtPeak: { type: number }
-            suggestions:
-              type: object
-              properties:
-                requiredPointsForTarget: { type: integer }
-                recommendedAdditionalPoints: { type: integer }
-                targetUtilization: { type: number }
-            explanation:
-              type: string
-              nullable: true
-
-    ChargingPoint:
-      type: object
-      properties:
-        id:
-          type: string
-        identifier:
-          type: string
-        status:
-          type: string
-          enum: [online, offline, occupied, maintenance]
-        powerKW:
-          type: number
-        lastHeartbeatAt:
-          type: string
-          format: date-time
-
-    Station:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        code:
-          type: string
-        status:
-          type: string
-          enum: [online, offline, maintenance]
-        location:
-          type: object
-          properties:
-            address:
-              type: string
-            lat:
-              type: number
-            lng:
-              type: number
-        totalPoints:
-          type: integer
-        onlinePoints:
-          type: integer
-        occupiedPoints:
-          type: integer
-
-    StationStatusResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          type: object
-          properties:
-            station:
-              $ref: '#/components/schemas/Station'
-            chargingPoints:
-              type: array
-              items:
-                $ref: '#/components/schemas/ChargingPoint'
-
-    IncidentReportRequest:
-      type: object
-      required: [type, description]
-      properties:
-        type:
-          type: string
-          example: hardware_failure
-        description:
-          type: string
-          minLength: 5
-          example: "Màn hình cột sạc CP-03 không hiển thị."
-        severity:
-          type: string
-          enum: [low, medium, high]
-          default: low
-        images:
-          type: array
-          items:
-            type: string
-            format: uri
-
-    IncidentReportResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        data:
-          type: object
-          properties:
-            id:
-              type: string
+          example: "Chi tiết lỗi..."
 
 paths:
+  # ========== AUTHENTICATION ==========
   /account/login:
     post:
-      summary: Đăng nhập cho quản lý đại lý hoặc nhân viên bán hàng
-      description: |
-        API đăng nhập chỉ cho phép tài khoản có role:
-        - Quản lý đại lý
-        - Nhân viên bán hàng
-        
-        Sau khi đăng nhập thành công, sẽ trả về token để sử dụng cho các API khác.
       tags:
         - Authentication
+      summary: Đăng nhập
+      description: Đăng nhập cho tài khoản đại lý
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "dealer@vinfast.vn"
+                password:
+                  type: string
+                  format: password
+                  example: "Dealer@123"
       responses:
         '200':
           description: Đăng nhập thành công
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-              example:
-                success: true
-                message: Đăng nhập thành công!
-                data:
-                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   user:
-                    id: "507f1f77bcf86cd799439011"
-                    fullName: "Nguyễn Văn A"
-                    email: "dealer@example.com"
-                    role: "Quản lý đại lý"
-                  dealer:
-                    id: "507f1f77bcf86cd799439012"
-                    name: "Đại lý ABC"
-                    code: "DL001"
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "673a1234567890abcdef5678"
+                      email:
+                        type: string
+                        example: "dealer@vinfast.vn"
+                      fullName:
+                        type: string
+                        example: "Nguyễn Văn Dealer"
+                      dealerId:
+                        type: string
+                        example: "673a9876543210fedcba9876"
+                      role:
+                        type: string
+                        example: "Quản lý đại lý"
         '400':
-          description: Dữ liệu không hợp lệ
+          description: Thiếu thông tin
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Vui lòng nhập email và mật khẩu!
         '401':
-          description: Email hoặc mật khẩu không chính xác
+          description: Sai email hoặc mật khẩu
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Email hoặc mật khẩu không chính xác!
-        '403':
-          description: Không có quyền truy cập
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Bạn không có quyền truy cập ứng dụng này!
-        '500':
-          description: Lỗi server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Đã có lỗi xảy ra, vui lòng thử lại sau!
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Email hoặc mật khẩu không đúng"
 
-  /product:
+  # ========== PRODUCTS ==========
+  /products:
     get:
-      summary: Lấy danh sách sản phẩm của đại lý
-      description: |
-        API lấy danh sách sản phẩm đã được phân bổ cho đại lý.
-        
-        Hỗ trợ:
-        - Tìm kiếm theo keyword (tên sản phẩm, version)
-        - Lọc theo categoryId
-        - Phân trang
-        
-        Chỉ trả về sản phẩm đã được phân bổ cho đại lý trong các allocation với status: pending, allocated, shipped, delivered
       tags:
         - Products
+      summary: Danh sách sản phẩm
+      description: Lấy danh sách sản phẩm xe điện (chỉ hiển thị sản phẩm có trong kho đại lý)
       security:
         - BearerAuth: []
       parameters:
-        - name: keyword
-          in: query
-          description: Từ khóa tìm kiếm (tên sản phẩm, version)
-          schema:
-            type: string
-          example: Alpha
-        - name: categoryId
-          in: query
-          description: ID danh mục để lọc sản phẩm
-          schema:
-            type: string
-          example: 507f1f77bcf86cd799439011
         - name: page
           in: query
-          description: Số trang (mặc định 1)
           schema:
             type: integer
             default: 1
           example: 1
         - name: limit
           in: query
-          description: Số lượng sản phẩm mỗi trang (mặc định 20)
           schema:
             type: integer
             default: 20
           example: 20
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: Tìm kiếm theo tên xe
+          example: "VF8"
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Lọc theo danh mục
       responses:
         '200':
-          description: Lấy danh sách sản phẩm thành công
+          description: Thành công
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProductsResponse'
-              example:
-                success: true
-                message: Lấy danh sách sản phẩm thành công!
-                data:
-                  products:
-                    - id: "507f1f77bcf86cd799439011"
-                      name: "EVM Alpha"
-                      version: "Long Range Plus"
-                      slug: "evm-alpha-long-range-plus"
-                      images:
-                        - "https://example.com/image1.jpg"
-                      basePrice: 1000000000
-                      rangeKm: 600
-                      batteryKWh: 100
-                      maxPowerHP: 200
-                      categories:
-                        - "SUV"
-                        - "Điện"
-                      categoryIds:
-                        - "507f1f77bcf86cd799439011"
-                      variants: []
-                      totalStock: 50
-                      status: "active"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "673b1111222233334444aaaa"
+                        name:
+                          type: string
+                          example: "VinFast VF8"
+                        version:
+                          type: string
+                          example: "2024"
+                        basePrice:
+                          type: number
+                          example: 1050000000
+                        rangeKm:
+                          type: number
+                          example: 420
+                        batteryKWh:
+                          type: number
+                          example: 87.7
+                        maxPowerHP:
+                          type: number
+                          example: 402
+                        images:
+                          type: array
+                          items:
+                            type: string
+                          example: ["https://cdn.example.com/vf8-1.jpg"]
+                        variants:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              attributeValue:
+                                type: array
+                                items:
+                                  type: string
+                                example: ["Màu trắng", "Nội thất da nâu"]
+                              price:
+                                type: number
+                                example: 1050000000
+                              dealerStock:
+                                type: integer
+                                description: Tồn kho đại lý cho variant này
+                                example: 15
                   pagination:
-                    page: 1
-                    limit: 20
-                    totalRecords: 100
-                    totalPages: 5
-        '401':
-          description: Token không hợp lệ hoặc không được cung cấp
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: Token không hợp lệ hoặc không được cung cấp!
-        '500':
-          description: Lỗi server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 25
+                      page:
+                        type: integer
+                        example: 1
 
-  /product/{id}:
+  /products/{id}:
     get:
-      summary: Lấy chi tiết sản phẩm
-      description: |
-        API lấy thông tin chi tiết của một sản phẩm.
-        
-        Chỉ trả về nếu sản phẩm đã được phân bổ cho đại lý.
-        Bao gồm đầy đủ thông tin: variants, attributes, categories, content.
       tags:
         - Products
+      summary: Chi tiết sản phẩm
+      description: Lấy thông tin chi tiết sản phẩm xe
       security:
         - BearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          description: ID của sản phẩm
           schema:
             type: string
-          example: 507f1f77bcf86cd799439011
+          example: "673b1111222233334444aaaa"
       responses:
         '200':
-          description: Lấy thông tin sản phẩm thành công
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProductDetailResponse'
-              example:
-                success: true
-                message: Lấy thông tin sản phẩm thành công!
-                data:
-                  product:
-                    id: "507f1f77bcf86cd799439011"
-                    name: "EVM Alpha"
-                    version: "Long Range Plus"
-                    slug: "evm-alpha-long-range-plus"
-                    images:
-                      - "https://example.com/image1.jpg"
-                    basePrice: 1000000000
-                    rangeKm: 600
-                    batteryKWh: 100
-                    maxPowerHP: 200
-                    categories:
-                      - id: "507f1f77bcf86cd799439011"
-                        name: "SUV"
-                        slug: "suv"
-                    categoryIds:
-                      - "507f1f77bcf86cd799439011"
-                    attributes: []
-                    variants: []
-                    content: "<p>Mô tả sản phẩm</p>"
-                    status: "active"
-        '401':
-          description: Token không hợp lệ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # =========== Stations (Client) ==========
-  /station/{stationId}/status:
-    get:
-      summary: Theo dõi tình trạng trạm sạc và các điểm sạc
-      tags:
-        - Stations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: stationId
-          in: path
-          required: true
-          description: ID của trạm sạc
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Lấy tình trạng trạm sạc thành công
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StationStatusResponse'
-        '400': { description: stationId không hợp lệ }
-        '401': { description: Token không hợp lệ hoặc không được cung cấp }
-        '404': { description: Không tìm thấy trạm sạc }
-        '500': { description: Lỗi server }
-
-  /station/{stationId}/incidents:
-    post:
-      summary: Báo cáo sự cố tại trạm sạc
-      tags:
-        - Stations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: stationId
-          in: path
-          required: true
-          description: ID của trạm sạc
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/IncidentReportRequest'
-      responses:
-        '201':
-          description: Gửi báo cáo sự cố thành công
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IncidentReportResponse'
-        '400': { description: Dữ liệu không hợp lệ hoặc stationId sai }
-        '401': { description: Token không hợp lệ hoặc không được cung cấp }
-        '404': { description: Không tìm thấy trạm sạc }
-        '500': { description: Lỗi server }
-
-  # =========== Analytics (Admin) ==========
-  /admin/analytics/revenue:
-    get:
-      summary: Thống kê doanh thu theo trạm/khu vực/thời gian
-      tags: [Analytics]
-      security:
-        - cookieAuth: []
-      parameters:
-        - name: groupBy
-          in: query
-          schema:
-            type: string
-            enum: [station, region, time]
-            default: station
-        - name: period
-          in: query
-          schema:
-            type: string
-            enum: [day, week, month]
-            default: day
-          description: Chỉ áp dụng khi groupBy=time
-        - name: start
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: end
-          in: query
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: Thống kê doanh thu
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: { $ref: '#/components/schemas/RevenueStation' }
-                  - type: array
-                    items: { $ref: '#/components/schemas/RevenueRegion' }
-                  - type: array
-                    items: { $ref: '#/components/schemas/RevenueTime' }
-        '401': { description: Chưa đăng nhập Admin (cookie không hợp lệ) }
-        '500': { description: Lỗi server }
-
-  /admin/analytics/usage:
-    get:
-      summary: Thống kê tần suất sử dụng và giờ cao điểm
-      tags: [Analytics]
-      security:
-        - cookieAuth: []
-      parameters:
-        - name: start
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: end
-          in: query
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: Thống kê tần suất sử dụng & giờ cao điểm
+          description: Thành công
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success: { type: boolean }
-                  message: { type: string }
+                  success:
+                    type: boolean
+                    example: true
                   data:
                     type: object
                     properties:
-                      byStation:
+                      _id:
+                        type: string
+                        example: "673b1111222233334444aaaa"
+                      name:
+                        type: string
+                        example: "VinFast VF8"
+                      version:
+                        type: string
+                        example: "2024"
+                      basePrice:
+                        type: number
+                        example: 1050000000
+                      rangeKm:
+                        type: number
+                        example: 420
+                      batteryKWh:
+                        type: number
+                        example: 87.7
+                      maxPowerHP:
+                        type: number
+                        example: 402
+                      content:
+                        type: string
+                        description: Mô tả chi tiết HTML
+                        example: "<p>VinFast VF8 là dòng xe điện cao cấp...</p>"
+                      images:
                         type: array
-                        items: { $ref: '#/components/schemas/UsageByStation' }
-                      peakHours:
+                        items:
+                          type: string
+                        example: ["https://cdn.example.com/vf8-1.jpg", "https://cdn.example.com/vf8-2.jpg"]
+                      attributes:
                         type: array
-                        items: { $ref: '#/components/schemas/PeakHour' }
-        '401': { description: Chưa đăng nhập Admin (cookie không hợp lệ) }
-        '500': { description: Lỗi server }
-
-  # =========== AI (Admin) ==========
-  /admin/ai/forecast-demand:
-    post:
-      summary: Dự báo nhu cầu phiên sạc và gợi ý nâng cấp hạ tầng theo trạm
-      tags: [AI]
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForecastRequest'
-      responses:
-        '200':
-          description: Kết quả dự báo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForecastResponse'
-        '400':
-          description: Thiếu hoặc sai stationId
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Chưa đăng nhập Admin (cookie không hợp lệ)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Lỗi server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # =========== AI (Client - public) ==========
-  /api/client/ai/forecast-demand:
-    post:
-      summary: Dự báo nhu cầu phiên sạc và gợi ý nâng cấp hạ tầng theo trạm (public)
-      description: Endpoint công khai, không cần xác thực. Dùng dữ liệu lịch sử để dự báo và gợi ý số cổng cần bổ sung.
-      tags: [AI]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ForecastRequest'
-      responses:
-        '200':
-          description: Kết quả dự báo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ForecastResponse'
-        '400':
-          description: Thiếu hoặc sai stationId
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Lỗi server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /station/{stationId}/status:
-    get:
-      summary: Theo dõi tình trạng trạm sạc và các điểm sạc
-      tags:
-        - Stations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: stationId
-          in: path
-          required: true
-          description: ID của trạm sạc
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Lấy tình trạng trạm sạc thành công
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StationStatusResponse'
-        '400':
-          description: stationId không hợp lệ
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Token không hợp lệ hoặc không được cung cấp
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: "Màu sắc"
+                            values:
+                              type: array
+                              items:
+                                type: string
+                              example: ["Trắng", "Đen", "Xanh"]
+                      variants:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            attributeValue:
+                              type: array
+                              items:
+                                type: string
+                              example: ["Màu trắng", "Nội thất da nâu", "Pin 87.7 kWh"]
+                            price:
+                              type: number
+                              example: 1050000000
+                            stock:
+                              type: integer
+                              description: Tồn kho tổng (của hãng)
+                              example: 150
+                            dealerStock:
+                              type: integer
+                              description: Tồn kho của đại lý
+                              example: 15
         '404':
-          description: Không tìm thấy trạm sạc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Lỗi server
+          description: Không tìm thấy hoặc không có quyền xem
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /station/{stationId}/incidents:
-    post:
-      summary: Báo cáo sự cố tại trạm sạc
-      tags:
-        - Stations
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: stationId
-          in: path
-          required: true
-          description: ID của trạm sạc
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/IncidentReportRequest'
-      responses:
-        '201':
-          description: Gửi báo cáo sự cố thành công
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IncidentReportResponse'
-        '400':
-          description: Dữ liệu không hợp lệ hoặc stationId sai
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Token không hợp lệ hoặc không được cung cấp
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Không tìm thấy trạm sạc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Lỗi server
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  # ==================== INVENTORY APIs (Phần 1b) ====================
-  /inventory:
+  # ========== ALLOCATIONS TRACKING ==========
+  /allocations/summary:
     get:
       tags:
-        - Inventory
-      summary: Lấy danh sách tồn kho của đại lý
+        - Allocation Tracking
+      summary: Thống kê phân bổ
+      description: Thống kê tổng quan về xe được phân bổ cho đại lý
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalAllocations:
+                        type: integer
+                        description: Tổng số lô phân bổ
+                        example: 25
+                      totalVehicles:
+                        type: integer
+                        description: Tổng số xe
+                        example: 150
+                      byStatus:
+                        type: object
+                        properties:
+                          pending:
+                            type: integer
+                            example: 5
+                          allocated:
+                            type: integer
+                            example: 8
+                          shipped:
+                            type: integer
+                            example: 7
+                          delivered:
+                            type: integer
+                            example: 5
+                      byProduct:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            productId:
+                              type: string
+                              example: "673b1111222233334444aaaa"
+                            productName:
+                              type: string
+                              example: "VinFast VF8"
+                            totalQuantity:
+                              type: integer
+                              example: 80
+
+  /allocations:
+    get:
+      tags:
+        - Allocation Tracking
+      summary: Danh sách phân bổ
+      description: Xem danh sách xe được phân bổ từ Hãng cho đại lý
       security:
         - BearerAuth: []
       parameters:
-        - in: query
-          name: page
+        - name: page
+          in: query
           schema:
             type: integer
-        - in: query
-          name: keyword
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          example: 20
+        - name: status
+          in: query
           schema:
             type: string
+            enum: [pending, allocated, shipped, delivered, cancelled]
+          example: "shipped"
+        - name: productId
+          in: query
+          schema:
+            type: string
+          description: Lọc theo sản phẩm
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                          example: "6755aaaa1111222233334444"
+                        dealerId:
+                          type: string
+                          example: "673a9876543210fedcba9876"
+                        productId:
+                          type: string
+                          example: "673b1111222233334444aaaa"
+                        variantIndex:
+                          type: integer
+                          example: 0
+                        quantity:
+                          type: integer
+                          example: 10
+                        allocatedQuantity:
+                          type: integer
+                          description: Số lượng đã có VIN
+                          example: 8
+                        status:
+                          type: string
+                          example: "shipped"
+                        allocatedAt:
+                          type: string
+                          format: date-time
+                          example: "2025-01-10T10:00:00.000Z"
+                        shippedAt:
+                          type: string
+                          format: date-time
+                          example: "2025-01-15T14:30:00.000Z"
+                        product:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: "VinFast VF8"
+                            version:
+                              type: string
+                              example: "2024"
 
-  /inventory/{productId}:
+  /allocations/{id}:
     get:
       tags:
-        - Inventory
-      summary: Tồn kho một sản phẩm
+        - Allocation Tracking
+      summary: Chi tiết phân bổ
+      description: Xem thông tin chi tiết 1 lô phân bổ
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: productId
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+          example: "6755aaaa1111222233334444"
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      _id:
+                        type: string
+                        example: "6755aaaa1111222233334444"
+                      dealerId:
+                        type: string
+                        example: "673a9876543210fedcba9876"
+                      productId:
+                        type: string
+                        example: "673b1111222233334444aaaa"
+                      variantIndex:
+                        type: integer
+                        example: 0
+                      quantity:
+                        type: integer
+                        example: 10
+                      allocatedQuantity:
+                        type: integer
+                        example: 8
+                      status:
+                        type: string
+                        example: "shipped"
+                      notes:
+                        type: string
+                        example: "Giao hàng đợt 1 - Tháng 1/2025"
+                      allocatedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-10T10:00:00.000Z"
+                      shippedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-15T14:30:00.000Z"
+                      product:
+                        type: object
+                        description: Thông tin sản phẩm (populated)
+                        properties:
+                          _id:
+                            type: string
+                            example: "673b1111222233334444aaaa"
+                          name:
+                            type: string
+                            example: "VinFast VF8"
+                          version:
+                            type: string
+                            example: "2024"
+                          variants:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                attributeValue:
+                                  type: array
+                                  items:
+                                    type: string
+                                  example: ["Màu trắng", "Nội thất da nâu"]
 
-  # ==================== ALLOCATION REQUEST APIs ====================
-  /allocation-requests:
+  /allocations/{id}/vins:
     get:
       tags:
-        - Allocation Request
-      summary: Danh sách yêu cầu đặt hàng
+        - Allocation Tracking
+      summary: Danh sách VIN
+      description: Xem danh sách VIN (số khung) của xe trong lô phân bổ
       security:
         - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID của allocation
+          example: "6755aaaa1111222233334444"
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      allocationId:
+                        type: string
+                        example: "6755aaaa1111222233334444"
+                      totalVins:
+                        type: integer
+                        example: 8
+                      vins:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            vin:
+                              type: string
+                              description: Số VIN (Vehicle Identification Number)
+                              example: "LVSHCAMB1PE123456"
+                            notes:
+                              type: string
+                              example: "Xe màu trắng - Pin mới 100%"
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2025-01-10T11:00:00.000Z"
+                            createdBy:
+                              type: string
+                              example: "Admin Nguyễn Văn A"
+
+  # ========== CUSTOMERS ==========
+  /customers/register:
     post:
       tags:
-        - Allocation Request
-      summary: Tạo yêu cầu mới
+        - Customers
+      summary: Đăng ký khách hàng mới
+      description: Tạo hồ sơ khách hàng mới trong hệ thống
       security:
         - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRegisterRequest'
+      responses:
+        '201':
+          description: Đăng ký thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Đăng ký khách hàng thành công"
+                  data:
+                    $ref: '#/components/schemas/CustomerResponse'
+        '400':
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Số điện thoại đã tồn tại
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Số điện thoại đã được đăng ký"
+
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: Danh sách khách hàng
+      description: Lấy danh sách khách hàng của đại lý
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Trang hiện tại
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Số bản ghi mỗi trang
+          example: 20
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: Tìm kiếm theo tên, SĐT, email
+          example: "Nguyễn Văn"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+          description: Lọc theo trạng thái
+          example: "active"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 150
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      totalPages:
+                        type: integer
+                        example: 8
+
+  /customers/{id}:
+    get:
+      tags:
+        - Customers
+      summary: Chi tiết khách hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674a1234567890abcdef1234"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CustomerResponse'
+        '404':
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags:
+        - Customers
+      summary: Cập nhật khách hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674a1234567890abcdef1234"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              properties:
+                fullName:
+                  type: string
+                  example: "Nguyễn Văn An (Updated)"
+                email:
+                  type: string
+                  example: "newemail@gmail.com"
+                address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                      example: "456 Lê Lợi"
+                status:
+                  type: string
+                  enum: [active, inactive]
+                  example: "active"
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cập nhật thông tin khách hàng thành công"
+                  data:
+                    $ref: '#/components/schemas/CustomerResponse'
+
+    delete:
+      tags:
+        - Customers
+      summary: Xóa khách hàng (soft delete)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674a1234567890abcdef1234"
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Xóa khách hàng thành công"
+
+  # ========== TEST DRIVES ==========
+  /test-drives:
+    post:
+      tags:
+        - Test Drives
+      summary: Đặt lịch lái thử
+      description: Tạo lịch hẹn lái thử xe cho khách hàng
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestDriveCreateRequest'
+      responses:
+        '201':
+          description: Đặt lịch thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Đặt lịch lái thử thành công"
+                  data:
+                    $ref: '#/components/schemas/TestDriveResponse'
+        '400':
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Test Drives
+      summary: Danh sách lịch hẹn lái thử
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          example: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, completed, cancelled, no_show]
+          example: "pending"
+        - name: customerId
+          in: query
+          schema:
+            type: string
+          description: Lọc theo khách hàng
+          example: "674a1234567890abcdef1234"
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Lọc theo ngày hẹn
+          example: "2025-02-01"
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TestDriveResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 45
+                      page:
+                        type: integer
+                        example: 1
+
+  /test-drives/{id}:
+    get:
+      tags:
+        - Test Drives
+      summary: Chi tiết lịch hẹn
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674c5555666677778888dddd"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TestDriveResponse'
+
+  /test-drives/{id}/confirm:
+    patch:
+      tags:
+        - Test Drives
+      summary: Xác nhận lịch hẹn
+      description: Chuyển status từ "pending" sang "confirmed"
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674c5555666677778888dddd"
+      responses:
+        '200':
+          description: Xác nhận thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Xác nhận lịch hẹn thành công"
+                  data:
+                    $ref: '#/components/schemas/TestDriveResponse'
+
+  /test-drives/{id}/complete:
+    patch:
+      tags:
+        - Test Drives
+      summary: Hoàn thành lái thử
+      description: Chuyển status sang "completed" sau khi khách lái thử xong
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674c5555666677778888dddd"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feedback:
+                  type: string
+                  description: Nhận xét của khách sau khi lái thử
+                  example: "Khách hài lòng, quan tâm đến việc mua xe"
+      responses:
+        '200':
+          description: Hoàn thành thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Hoàn thành lái thử thành công"
+
+  /test-drives/{id}/cancel:
+    patch:
+      tags:
+        - Test Drives
+      summary: Hủy lịch hẹn
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674c5555666677778888dddd"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cancelReason:
+                  type: string
+                  description: Lý do hủy
+                  example: "Khách đổi lịch"
+      responses:
+        '200':
+          description: Hủy thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Hủy lịch hẹn thành công"
+
+  # ========== CUSTOMER FEEDBACK ==========
+  /feedbacks:
+    post:
+      tags:
+        - Customer Feedback
+      summary: Gửi phản hồi/khiếu nại
+      description: Khách hàng gửi feedback hoặc complaint
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreateRequest'
+      responses:
+        '201':
+          description: Gửi phản hồi thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Gửi phản hồi thành công"
+                  data:
+                    $ref: '#/components/schemas/FeedbackResponse'
+
+    get:
+      tags:
+        - Customer Feedback
+      summary: Danh sách phản hồi
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          example: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [feedback, complaint, inquiry, suggestion]
+          example: "complaint"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, closed]
+          example: "open"
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+          example: "high"
+        - name: customerId
+          in: query
+          schema:
+            type: string
+          example: "674a1234567890abcdef1234"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeedbackResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 78
+
+  /feedbacks/{id}:
+    get:
+      tags:
+        - Customer Feedback
+      summary: Chi tiết phản hồi
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674e9999aaaabbbbccccffff"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FeedbackResponse'
+
+  /feedbacks/{id}/reply:
+    patch:
+      tags:
+        - Customer Feedback
+      summary: Trả lời phản hồi
+      description: Nhân viên trả lời phản hồi của khách hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674e9999aaaabbbbccccffff"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackReplyRequest'
+      responses:
+        '200':
+          description: Trả lời thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Trả lời phản hồi thành công"
+                  data:
+                    $ref: '#/components/schemas/FeedbackResponse'
+
+  /feedbacks/{id}/resolve:
+    patch:
+      tags:
+        - Customer Feedback
+      summary: Giải quyết phản hồi
+      description: Đánh dấu phản hồi đã được giải quyết
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674e9999aaaabbbbccccffff"
+      responses:
+        '200':
+          description: Giải quyết thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Giải quyết phản hồi thành công"
+
+  /feedbacks/{id}/close:
+    patch:
+      tags:
+        - Customer Feedback
+      summary: Đóng phản hồi
+      description: Đóng phản hồi sau khi đã giải quyết hoàn tất
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "674e9999aaaabbbbccccffff"
+      responses:
+        '200':
+          description: Đóng thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Đóng phản hồi thành công"
+
+  # ========== ALLOCATION REQUESTS ==========
+  /allocation-requests:
+    post:
+      tags:
+        - Allocation Request
+      summary: Tạo yêu cầu đặt hàng xe
+      description: Dealer tạo yêu cầu đặt xe từ Hãng (status = "draft")
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRequestCreateRequest'
+      responses:
+        '201':
+          description: Tạo yêu cầu thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tạo yêu cầu đặt hàng thành công"
+                  data:
+                    $ref: '#/components/schemas/AllocationRequestResponse'
+
+    get:
+      tags:
+        - Allocation Request
+      summary: Danh sách yêu cầu đặt hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, approved, rejected, completed, cancelled]
+          example: "submitted"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AllocationRequestResponse'
 
   /allocation-requests/{id}:
     get:
@@ -1206,28 +2035,39 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+          example: "674f1111222233334444gggg"
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AllocationRequestResponse'
 
     patch:
       tags:
         - Allocation Request
-      summary: Cập nhật yêu cầu (chỉ draft)
-      description: Sửa items, quantity, notes... khi request còn ở trạng thái draft
+      summary: Cập nhật yêu cầu (khi còn ở draft)
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+          example: "674f1111222233334444gggg"
       requestBody:
         content:
           application/json:
@@ -1241,69 +2081,65 @@ paths:
                     properties:
                       productId:
                         type: string
+                        example: "673b1111222233334444aaaa"
                       variantIndex:
                         type: integer
+                        example: 0
                       quantity:
                         type: integer
-                      notes:
-                        type: string
+                        example: 8
                 requestType:
                   type: string
-                  enum: [normal, urgent]
-                priority:
-                  type: string
-                  enum: [low, medium, high]
-                expectedDeliveryDate:
-                  type: string
-                  format: date
-                reason:
-                  type: string
-                notes:
-                  type: string
+                  example: "normal"
       responses:
         '200':
           description: Cập nhật thành công
-        '400':
-          description: Chỉ draft mới được update
-        '404':
-          description: Không tìm thấy
+
     delete:
       tags:
         - Allocation Request
-      summary: Xóa yêu cầu (chỉ draft)
-      description: Xóa vĩnh viễn request khi còn ở trạng thái draft
+      summary: Xóa yêu cầu (soft delete, chỉ khi draft)
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+          example: "674f1111222233334444gggg"
       responses:
         '200':
           description: Xóa thành công
-        '400':
-          description: Chỉ draft mới được xóa
-        '404':
-          description: Không tìm thấy
 
   /allocation-requests/{id}/submit:
     patch:
       tags:
         - Allocation Request
-      summary: Gửi yêu cầu
+      summary: Gửi yêu cầu (draft → submitted)
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+          example: "674f1111222233334444gggg"
       responses:
         '200':
-          description: Thành công
+          description: Gửi yêu cầu thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Gửi yêu cầu đặt hàng thành công"
 
   /allocation-requests/{id}/cancel:
     patch:
@@ -1313,624 +2149,233 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+          example: "674f1111222233334444gggg"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cancelReason:
+                  type: string
+                  example: "Đổi kế hoạch kinh doanh"
       responses:
         '200':
-          description: Thành công
+          description: Hủy thành công
 
-  # ==================== ALLOCATION TRACKING APIs ====================
-  /allocations/summary:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Thống kê phân bổ
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /allocations:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Danh sách phân bổ
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /allocations/{id}:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Chi tiết phân bổ
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  /allocations/{id}/vins:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Danh sách VIN
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  # ==================== PRICING & PROMOTION APIs ====================
-  /pricing:
-    get:
-      tags:
-        - Pricing & Promotion
-      summary: Giá sỉ
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /pricing/discounts:
-    get:
-      tags:
-        - Pricing & Promotion
-      summary: Chiết khấu
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /pricing/promotions:
-    get:
-      tags:
-        - Pricing & Promotion
-      summary: Khuyến mãi
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /pricing/calculate:
-    get:
-      tags:
-        - Pricing & Promotion
-      summary: Tính giá
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: query
-          name: productId
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: variantIndex
-          required: true
-          schema:
-            type: integer
-        - in: query
-          name: quantity
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Thành công
-  # ==================== INVENTORY APIs (Phần 1b) ====================
+  # ========== INVENTORY ==========
   /inventory:
     get:
       tags:
         - Inventory
-      summary: Lấy danh sách tồn kho của đại lý
+      summary: Danh sách tồn kho
+      description: Xem tồn kho của đại lý
       security:
         - BearerAuth: []
       parameters:
-        - in: query
-          name: page
+        - name: page
+          in: query
           schema:
             type: integer
-        - in: query
-          name: keyword
+            default: 1
+          example: 1
+        - name: productId
+          in: query
           schema:
             type: string
+          description: Lọc theo sản phẩm
+          example: "673b1111222233334444aaaa"
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryResponse'
 
   /inventory/{productId}:
     get:
       tags:
         - Inventory
-      summary: Tồn kho một sản phẩm
+      summary: Tồn kho theo sản phẩm
+      description: Lấy tồn kho của TẤT CẢ variants của 1 sản phẩm
       security:
         - BearerAuth: []
       parameters:
-        - in: path
-          name: productId
+        - name: productId
+          in: path
           required: true
           schema:
             type: string
+          description: ID của sản phẩm
+          example: "673b1111222233334444aaaa"
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      productId:
+                        type: string
+                        example: "673b1111222233334444aaaa"
+                      productName:
+                        type: string
+                        example: "VinFast VF8"
+                      totalStock:
+                        type: integer
+                        description: Tổng tồn kho tất cả variants
+                        example: 45
+                      totalReserved:
+                        type: integer
+                        description: Tổng số đã đặt chưa xuất
+                        example: 8
+                      variants:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            variantIndex:
+                              type: integer
+                              example: 0
+                            attributeValue:
+                              type: array
+                              items:
+                                type: string
+                              example: ["Màu trắng", "Nội thất da nâu"]
+                            stock:
+                              type: integer
+                              example: 15
+                            reservedStock:
+                              type: integer
+                              example: 3
+                            availableStock:
+                              type: integer
+                              example: 12
 
-  # ==================== ALLOCATION REQUEST APIs ====================
-  /allocation-requests:
-    get:
-      tags:
-        - Allocation Request
-      summary: Danh sách yêu cầu đặt hàng
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-    post:
-      tags:
-        - Allocation Request
-      summary: Tạo yêu cầu mới
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Thành công
-
-  /allocation-requests/{id}:
-    get:
-      tags:
-        - Allocation Request
-      summary: Chi tiết yêu cầu
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  /allocation-requests/{id}/submit:
-    patch:
-      tags:
-        - Allocation Request
-      summary: Gửi yêu cầu
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  /allocation-requests/{id}/cancel:
-    patch:
-      tags:
-        - Allocation Request
-      summary: Hủy yêu cầu
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  # ==================== ALLOCATION TRACKING APIs ====================
-  /allocations/summary:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Thống kê phân bổ
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /allocations:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Danh sách phân bổ
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /allocations/{id}:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Chi tiết phân bổ
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  /allocations/{id}/vins:
-    get:
-      tags:
-        - Allocation Tracking
-      summary: Danh sách VIN
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Thành công
-
-  # ==================== PRICING & PROMOTION APIs ====================
+  # ========== PRICING & PROMOTION ==========
   /pricing:
     get:
       tags:
         - Pricing & Promotion
-      summary: Giá sỉ
+      summary: Danh sách giá sỉ
       security:
         - BearerAuth: []
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PricingResponse'
 
   /pricing/discounts:
     get:
       tags:
         - Pricing & Promotion
-      summary: Chiết khấu
+      summary: Danh sách chiết khấu
       security:
         - BearerAuth: []
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiscountResponse'
 
   /pricing/promotions:
     get:
       tags:
         - Pricing & Promotion
-      summary: Khuyến mãi
+      summary: Danh sách khuyến mãi
       security:
         - BearerAuth: []
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PromotionResponse'
 
   /pricing/calculate:
     get:
       tags:
         - Pricing & Promotion
-      summary: Tính giá
+      summary: Tính giá cuối cùng
+      description: Tính giá sau khi áp dụng chiết khấu và khuyến mãi
       security:
         - BearerAuth: []
       parameters:
-        - in: query
-          name: productId
+        - name: productId
+          in: query
           required: true
           schema:
             type: string
-        - in: query
-          name: variantIndex
+          example: "673b1111222233334444aaaa"
+        - name: variantIndex
+          in: query
           required: true
           schema:
             type: integer
-        - in: query
-          name: quantity
+          example: 0
+        - name: quantity
+          in: query
           required: true
           schema:
             type: integer
+            minimum: 1
+          example: 10
       responses:
         '200':
           description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculatePriceResponse'
 
-  # ==================== CUSTOMER APIs (Phần 1c) ====================
-  /customers/register:
-    post:
-      tags:
-        - Customer
-      summary: Đăng ký khách hàng mới
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [fullName, phone]
-              properties:
-                fullName: { type: string }
-                phone: { type: string }
-                email: { type: string }
-      responses:
-        '201':
-          description: Thành công
-
-  /customers:
-    get:
-      tags:
-        - Customer
-      summary: Danh sách khách hàng
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /customers/{id}:
-    get:
-      tags:
-        - Customer
-      summary: Chi tiết khách hàng
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-    patch:
-      tags:
-        - Customer
-      summary: Cập nhật khách hàng
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-    delete:
-      tags:
-        - Customer
-      summary: Xóa khách hàng
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  # ==================== TEST DRIVE APIs ====================
-  /test-drives:
-    post:
-      tags:
-        - Test Drive
-      summary: Đặt lịch lái thử
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [customerId, productId, variantIndex, scheduledDate, scheduledTime, location]
-      responses:
-        '201':
-          description: Thành công
-    get:
-      tags:
-        - Test Drive
-      summary: Danh sách lịch hẹn
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /test-drives/{id}:
-    get:
-      tags:
-        - Test Drive
-      summary: Chi tiết lịch hẹn
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  /test-drives/{id}/confirm:
-    patch:
-      tags:
-        - Test Drive
-      summary: Xác nhận lịch hẹn
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  /test-drives/{id}/complete:
-    patch:
-      tags:
-        - Test Drive
-      summary: Hoàn thành lái thử
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  /test-drives/{id}/cancel:
-    patch:
-      tags:
-        - Test Drive
-      summary: Hủy lịch hẹn
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  # ==================== CUSTOMER FEEDBACK APIs ====================
-  /feedbacks:
-    post:
-      tags:
-        - Customer Feedback
-      summary: Gửi phản hồi/khiếu nại
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [customerId, type, category, subject, description]
-      responses:
-        '201':
-          description: Thành công
-    get:
-      tags:
-        - Customer Feedback
-      summary: Danh sách phản hồi
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Thành công
-
-  /feedbacks/{id}:
-    get:
-      tags:
-        - Customer Feedback
-      summary: Chi tiết phản hồi
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  /feedbacks/{id}/reply:
-    patch:
-      tags:
-        - Customer Feedback
-      summary: Trả lời phản hồi
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  /feedbacks/{id}/resolve:
-    patch:
-      tags:
-        - Customer Feedback
-      summary: Giải quyết phản hồi
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
-
-  /feedbacks/{id}/close:
-    patch:
-      tags:
-        - Customer Feedback
-      summary: Đóng phản hồi
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
-      responses:
-        '200':
-          description: Thành công
