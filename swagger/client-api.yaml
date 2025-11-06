@@ -32,6 +32,8 @@ tags:
     description: Báo cáo doanh thu và tần suất sử dụng (Admin)
   - name: AI
     description: Dự báo nhu cầu và gợi ý nâng cấp hạ tầng (Admin)
+  - name: AI Chatbot
+    description: Chatbot AI giao tiếp với người dùng, đọc database và dự báo nhu cầu cho kế hoạch sản xuất & phân phối
 
 components:
   securitySchemes:
