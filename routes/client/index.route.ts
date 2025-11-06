@@ -21,7 +21,7 @@ router.get('/', (req: Request, res: Response) => {
         version: "1.0.0",
         endpoints: {
             login: "POST /api/client/account/login",
-            products: "GET /api/client/product",
+            products: "GET /api/client/products",
             inventory: "GET /api/client/inventory",
             allocationRequests: "GET /api/client/allocation-requests",
             allocations: "GET /api/client/allocations",
@@ -31,7 +31,7 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 router.use('/account', accountRoutes);
-router.use('/product', authMiddleware.verifyToken, productRoutes);
+router.use('/products', authMiddleware.verifyToken, productRoutes);
 router.use('/inventory', authMiddleware.verifyToken, inventoryRoutes);
 router.use('/allocation-requests', authMiddleware.verifyToken, allocationRequestRoutes);
 router.use('/allocations', authMiddleware.verifyToken, allocationRoutes);
