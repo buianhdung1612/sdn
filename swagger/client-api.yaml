@@ -145,6 +145,47 @@ components:
             address:
               type: string
               example: "123 Nguyễn Huệ, Quận 1, TP.HCM"
+        items:
+          type: array
+          description: Danh sách xe đã đặt
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+                example: "673b1111222233334444aaaa"
+              productName:
+                type: string
+                example: "VinFast VF8"
+              productVersion:
+                type: string
+                example: "2024"
+              productImages:
+                type: array
+                items:
+                  type: string
+                example: ["https://res.cloudinary.com/.../vf8.jpg"]
+              variantIndex:
+                type: integer
+                example: 0
+              attributeValues:
+                type: array
+                description: Thuộc tính xe (màu, nội thất...)
+                items:
+                  type: object
+                example: [{"label": "Màu trắng", "value": "white"}]
+              quantity:
+                type: integer
+                example: 2
+              unitPrice:
+                type: number
+                example: 1050000000
+              discount:
+                type: number
+                example: 5000000
+              totalPrice:
+                type: number
+                example: 2090000000
         totalItems:
           type: integer
           description: Số loại sản phẩm

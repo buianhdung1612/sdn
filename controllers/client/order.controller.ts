@@ -57,28 +57,48 @@ export const getOrderList = async (req: RequestClient, res: Response) => {
 
         console.log("Found orders:", orders.length);
         
-        const formattedOrders = orders.map((order: any) => ({
-            id: order._id.toString(),
-            orderNumber: order.orderNumber,
-            customer: {
-                fullName: order.customerInfo.fullName,
-                phone: order.customerInfo.phone,
-                email: order.customerInfo.email,
-                address: order.customerInfo.address
-            },
-            totalItems: order.items.length,
-            totalQuantity: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
-            subtotal: order.subtotal,
-            discountAmount: order.discountAmount,
-            totalAmount: order.totalAmount,
-            status: order.status,
-            paymentMethod: order.paymentMethod,
-            orderedAt: order.orderedAt,
-            confirmedAt: order.confirmedAt,
-            completedAt: order.completedAt,
-            cancelledAt: order.cancelledAt,
-            createdAt: order.createdAt
-        }));
+        const formattedOrders = orders.map((order: any) => {
+            // Format items với thông tin xe
+            const formattedItems = order.items.map((item: any) => {
+                const product = item.productId;
+                return {
+                    productId: product?._id?.toString(),
+                    productName: item.productSnapshot?.name || product?.name,
+                    productVersion: item.productSnapshot?.version || product?.version,
+                    productImages: item.productSnapshot?.images || product?.images || [],
+                    variantIndex: item.variantIndex,
+                    attributeValues: item.productSnapshot?.attributeValues || [],
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    discount: item.discount,
+                    totalPrice: item.totalPrice
+                };
+            });
+
+            return {
+                id: order._id.toString(),
+                orderNumber: order.orderNumber,
+                customer: {
+                    fullName: order.customerInfo.fullName,
+                    phone: order.customerInfo.phone,
+                    email: order.customerInfo.email,
+                    address: order.customerInfo.address
+                },
+                items: formattedItems, // Thêm chi tiết items
+                totalItems: order.items.length,
+                totalQuantity: order.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+                subtotal: order.subtotal,
+                discountAmount: order.discountAmount,
+                totalAmount: order.totalAmount,
+                status: order.status,
+                paymentMethod: order.paymentMethod,
+                orderedAt: order.orderedAt,
+                confirmedAt: order.confirmedAt,
+                completedAt: order.completedAt,
+                cancelledAt: order.cancelledAt,
+                createdAt: order.createdAt
+            };
+        });
 
         console.log("Returning response with", formattedOrders.length, "orders");
         
