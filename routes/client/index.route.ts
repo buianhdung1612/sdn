@@ -10,6 +10,7 @@ import pricingRoutes from "./pricing.route"
 import customerRoutes from "./customer.route"
 import testDriveRoutes from "./test-drive.route"
 import feedbackRoutes from "./customer-feedback.route"
+import orderRoutes from "./order.route"
 import * as authMiddleware from "../../middlewares/client/auth.middleware";
 
 const router = Router();
@@ -25,7 +26,8 @@ router.get('/', (req: Request, res: Response) => {
             inventory: "GET /api/client/inventory",
             allocationRequests: "GET /api/client/allocation-requests",
             allocations: "GET /api/client/allocations",
-            pricing: "GET /api/client/pricing"
+            pricing: "GET /api/client/pricing",
+            orders: "GET /api/client/orders"
         }
     });
 });
@@ -39,6 +41,7 @@ router.use('/pricing', authMiddleware.verifyToken, pricingRoutes);
 router.use('/customers', authMiddleware.verifyToken, customerRoutes);
 router.use('/test-drives', authMiddleware.verifyToken, testDriveRoutes);
 router.use('/feedbacks', authMiddleware.verifyToken, feedbackRoutes);
+router.use('/orders', authMiddleware.verifyToken, orderRoutes);
 router.use('/station', stationRoutes);
 router.use('/ai', aiRoutes);
 

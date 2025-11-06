@@ -28,6 +28,8 @@ tags:
     description: API quản lý lịch hẹn lái thử
   - name: Customer Feedback
     description: API quản lý phản hồi khách hàng
+  - name: Orders
+    description: API quản lý đơn hàng
 
 components:
   securitySchemes:
@@ -38,6 +40,370 @@ components:
       description: JWT token từ API đăng nhập. Format: Bearer {token}
 
   schemas:
+    # ========== ORDER SCHEMAS ==========
+    OrderItemRequest:
+      type: object
+      required:
+        - productId
+        - variantIndex
+        - quantity
+      properties:
+        productId:
+          type: string
+          description: ID sản phẩm
+          example: "673b1111222233334444aaaa"
+        variantIndex:
+          type: integer
+          description: Chỉ số variant
+          example: 0
+        quantity:
+          type: integer
+          description: Số lượng
+          minimum: 1
+          example: 2
+        discount:
+          type: number
+          description: Chiết khấu cho item này (VND)
+          default: 0
+          example: 5000000
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - customerId
+        - items
+      properties:
+        customerId:
+          type: string
+          description: ID khách hàng
+          example: "674a1234567890abcdef1234"
+        items:
+          type: array
+          description: Danh sách sản phẩm trong đơn hàng
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+        customerNotes:
+          type: string
+          description: Ghi chú từ khách hàng
+          example: "Khách muốn nhận xe trước Tết"
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, installment, other]
+          default: cash
+          example: "installment"
+        shippingAddress:
+          type: object
+          description: Địa chỉ giao hàng (nếu khác địa chỉ khách hàng)
+          properties:
+            fullAddress:
+              type: string
+              example: "456 Lê Lợi, Phường Bến Thành, Quận 1"
+            city:
+              type: string
+              example: "TP. Hồ Chí Minh"
+            district:
+              type: string
+              example: "Quận 1"
+            ward:
+              type: string
+              example: "Phường Bến Thành"
+
+    OrderListResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "675c1111222233334444eeee"
+        orderNumber:
+          type: string
+          example: "ORD-20250106-0123"
+        customer:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "674a1234567890abcdef1234"
+            fullName:
+              type: string
+              example: "Nguyễn Văn An"
+            phone:
+              type: string
+              example: "0901234567"
+            email:
+              type: string
+              example: "nguyenvanan@gmail.com"
+        totalItems:
+          type: integer
+          description: Số loại sản phẩm
+          example: 2
+        totalQuantity:
+          type: integer
+          description: Tổng số lượng xe
+          example: 3
+        subtotal:
+          type: number
+          description: Tổng tiền chưa chiết khấu
+          example: 2100000000
+        discountAmount:
+          type: number
+          description: Tổng chiết khấu
+          example: 50000000
+        totalAmount:
+          type: number
+          description: Tổng tiền sau chiết khấu
+          example: 2050000000
+        status:
+          type: string
+          enum: [draft, pending, confirmed, processing, delivering, completed, cancelled, refunded]
+          example: "pending"
+        paymentMethod:
+          type: string
+          enum: [cash, bank_transfer, installment, other]
+          example: "installment"
+        orderedAt:
+          type: string
+          format: date-time
+          description: Ngày đặt hàng
+          example: "2025-01-06T10:30:00.000Z"
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-06T09:00:00.000Z"
+
+    OrderDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "675c1111222233334444eeee"
+        orderNumber:
+          type: string
+          example: "ORD-20250106-0123"
+        customer:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "674a1234567890abcdef1234"
+            fullName:
+              type: string
+              example: "Nguyễn Văn An"
+            phone:
+              type: string
+              example: "0901234567"
+            email:
+              type: string
+              example: "nguyenvanan@gmail.com"
+            address:
+              type: string
+              example: "123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. HCM"
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+                example: "673b1111222233334444aaaa"
+              productName:
+                type: string
+                example: "VinFast VF8"
+              productVersion:
+                type: string
+                example: "2024"
+              productImages:
+                type: array
+                items:
+                  type: string
+                example: ["https://res.cloudinary.com/.../vf8-1.jpg"]
+              variantIndex:
+                type: integer
+                example: 0
+              variantInfo:
+                type: object
+                nullable: true
+                properties:
+                  attributeValues:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Màu trắng", "Nội thất da nâu"]
+                  price:
+                    type: number
+                    example: 1050000000
+              attributeValues:
+                type: array
+                items:
+                  type: string
+                example: ["Màu trắng", "Nội thất da nâu"]
+              quantity:
+                type: integer
+                example: 2
+              unitPrice:
+                type: number
+                example: 1050000000
+              discount:
+                type: number
+                example: 5000000
+              totalPrice:
+                type: number
+                example: 2090000000
+        subtotal:
+          type: number
+          example: 2100000000
+        discountAmount:
+          type: number
+          example: 50000000
+        taxAmount:
+          type: number
+          example: 0
+        totalAmount:
+          type: number
+          example: 2050000000
+        status:
+          type: string
+          example: "pending"
+        statusHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "draft"
+              changedAt:
+                type: string
+                format: date-time
+                example: "2025-01-06T09:00:00.000Z"
+              changedBy:
+                type: string
+                nullable: true
+                example: "675a1234567890abcdef9999"
+              notes:
+                type: string
+                nullable: true
+                example: "Tạo đơn hàng"
+        paymentMethod:
+          type: string
+          example: "installment"
+        shippingAddress:
+          type: object
+          nullable: true
+          properties:
+            fullAddress:
+              type: string
+              example: "456 Lê Lợi, Phường Bến Thành, Quận 1"
+            city:
+              type: string
+              example: "TP. Hồ Chí Minh"
+            district:
+              type: string
+              example: "Quận 1"
+            ward:
+              type: string
+              example: "Phường Bến Thành"
+        customerNotes:
+          type: string
+          nullable: true
+          example: "Khách muốn nhận xe trước Tết"
+        dealerNotes:
+          type: string
+          nullable: true
+          example: "Ưu tiên xử lý"
+        orderedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-06T10:30:00.000Z"
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        createdBy:
+          type: object
+          nullable: true
+          properties:
+            fullName:
+              type: string
+              example: "Nguyễn Thị B"
+            email:
+              type: string
+              example: "nguyenthib@dealer.com"
+        updatedBy:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-06T09:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-01-06T10:30:00.000Z"
+
+    OrderHistoryResponse:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+          example: "ORD-20250106-0123"
+        currentStatus:
+          type: string
+          example: "confirmed"
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "draft"
+              changedAt:
+                type: string
+                format: date-time
+                example: "2025-01-06T09:00:00.000Z"
+              changedBy:
+                type: object
+                nullable: true
+                properties:
+                  fullName:
+                    type: string
+                    example: "Nguyễn Thị B"
+                  email:
+                    type: string
+                    example: "nguyenthib@dealer.com"
+              notes:
+                type: string
+                nullable: true
+                example: "Tạo đơn hàng"
+
     # ========== CUSTOMER SCHEMAS ==========
     CustomerRegisterRequest:
       type: object
@@ -2378,4 +2744,539 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CalculatePriceResponse'
+
+  # ========== ORDERS ==========
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Danh sách đơn hàng
+      description: Lấy danh sách đơn hàng của đại lý
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          example: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending, confirmed, processing, delivering, completed, cancelled, refunded]
+          description: Lọc theo trạng thái
+          example: "pending"
+        - name: customerId
+          in: query
+          schema:
+            type: string
+          description: Lọc theo khách hàng
+          example: "674a1234567890abcdef1234"
+        - name: keyword
+          in: query
+          schema:
+            type: string
+          description: Tìm kiếm theo mã đơn, tên/sđt/email khách hàng
+          example: "Nguyễn Văn"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Lấy danh sách đơn hàng thành công!"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderListResponse'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 45
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      totalPages:
+                        type: integer
+                        example: 3
+
+    post:
+      tags:
+        - Orders
+      summary: Tạo đơn hàng mới
+      description: Tạo đơn hàng cho khách hàng (trạng thái draft)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              customerId: "674a1234567890abcdef1234"
+              items:
+                - productId: "673b1111222233334444aaaa"
+                  variantIndex: 0
+                  quantity: 2
+                  discount: 5000000
+                - productId: "673b2222333344445555bbbb"
+                  variantIndex: 1
+                  quantity: 1
+                  discount: 0
+              customerNotes: "Khách muốn nhận xe trước Tết"
+              paymentMethod: "installment"
+              shippingAddress:
+                fullAddress: "456 Lê Lợi, Phường Bến Thành, Quận 1"
+                city: "TP. Hồ Chí Minh"
+                district: "Quận 1"
+                ward: "Phường Bến Thành"
+      responses:
+        '201':
+          description: Tạo đơn hàng thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Tạo đơn hàng thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "675c1111222233334444eeee"
+                      orderNumber:
+                        type: string
+                        example: "ORD-20250106-0123"
+                      status:
+                        type: string
+                        example: "draft"
+                      totalAmount:
+                        type: number
+                        example: 2050000000
+        '400':
+          description: Lỗi validation hoặc thiếu tồn kho
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Sản phẩm VinFast VF8 (Màu trắng, Nội thất da nâu) chỉ còn 5 xe!"
+
+  /orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Chi tiết đơn hàng
+      description: Xem thông tin chi tiết 1 đơn hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID đơn hàng
+          example: "675c1111222233334444eeee"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Lấy thông tin đơn hàng thành công!"
+                  data:
+                    $ref: '#/components/schemas/OrderDetailResponse'
+
+    patch:
+      tags:
+        - Orders
+      summary: Cập nhật đơn hàng
+      description: Cập nhật đơn hàng (chỉ khi trạng thái là draft)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "675c1111222233334444eeee"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/OrderItemRequest'
+                customerNotes:
+                  type: string
+                dealerNotes:
+                  type: string
+                paymentMethod:
+                  type: string
+                  enum: [cash, bank_transfer, installment, other]
+                shippingAddress:
+                  type: object
+                  properties:
+                    fullAddress:
+                      type: string
+                    city:
+                      type: string
+                    district:
+                      type: string
+                    ward:
+                      type: string
+            example:
+              items:
+                - productId: "673b1111222233334444aaaa"
+                  variantIndex: 0
+                  quantity: 3
+                  discount: 10000000
+              dealerNotes: "Ưu tiên xử lý"
+              paymentMethod: "bank_transfer"
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cập nhật đơn hàng thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "675c1111222233334444eeee"
+                      orderNumber:
+                        type: string
+                        example: "ORD-20250106-0123"
+                      status:
+                        type: string
+                        example: "draft"
+                      totalAmount:
+                        type: number
+                        example: 3140000000
+        '400':
+          description: Không thể sửa đơn hàng
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Chỉ có thể sửa đơn hàng ở trạng thái 'draft'!"
+
+    delete:
+      tags:
+        - Orders
+      summary: Xóa đơn hàng
+      description: Xóa đơn hàng (soft delete, chỉ khi trạng thái là draft)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "675c1111222233334444eeee"
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Xóa đơn hàng thành công!"
+        '400':
+          description: Không thể xóa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Chỉ có thể xóa đơn hàng ở trạng thái 'draft'!"
+
+  /orders/{id}/submit:
+    patch:
+      tags:
+        - Orders
+      summary: Gửi đơn hàng
+      description: Gửi đơn hàng (chuyển từ draft → pending). Hệ thống sẽ tự động reserve stock.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "675c1111222233334444eeee"
+      responses:
+        '200':
+          description: Gửi đơn hàng thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Gửi đơn hàng thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "675c1111222233334444eeee"
+                      orderNumber:
+                        type: string
+                        example: "ORD-20250106-0123"
+                      status:
+                        type: string
+                        example: "pending"
+                      orderedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-06T10:30:00.000Z"
+        '400':
+          description: Không đủ tồn kho hoặc trạng thái không hợp lệ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Sản phẩm chỉ còn 2 xe!"
+
+  /orders/{id}/confirm:
+    patch:
+      tags:
+        - Orders
+      summary: Xác nhận đơn hàng
+      description: Xác nhận đơn hàng (chuyển từ pending → confirmed)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "675c1111222233334444eeee"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  description: Ghi chú khi xác nhận
+            example:
+              notes: "Đơn hàng đã được xác nhận, chuẩn bị xe"
+      responses:
+        '200':
+          description: Xác nhận thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Xác nhận đơn hàng thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "675c1111222233334444eeee"
+                      orderNumber:
+                        type: string
+                        example: "ORD-20250106-0123"
+                      status:
+                        type: string
+                        example: "confirmed"
+                      confirmedAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-06T11:00:00.000Z"
+
+  /orders/{id}/cancel:
+    patch:
+      tags:
+        - Orders
+      summary: Hủy đơn hàng
+      description: Hủy đơn hàng. Hệ thống sẽ tự động giải phóng reserved stock.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "675c1111222233334444eeee"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Lý do hủy đơn
+            example:
+              reason: "Khách hàng không còn nhu cầu"
+      responses:
+        '200':
+          description: Hủy đơn hàng thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Hủy đơn hàng thành công!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "675c1111222233334444eeee"
+                      orderNumber:
+                        type: string
+                        example: "ORD-20250106-0123"
+                      status:
+                        type: string
+                        example: "cancelled"
+                      cancelledAt:
+                        type: string
+                        format: date-time
+                        example: "2025-01-06T14:30:00.000Z"
+        '400':
+          description: Không thể hủy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Không thể hủy đơn hàng ở trạng thái này!"
+
+  /orders/{id}/history:
+    get:
+      tags:
+        - Orders
+      summary: Lịch sử đơn hàng
+      description: Xem lịch sử thay đổi trạng thái của đơn hàng
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "675c1111222233334444eeee"
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Lấy lịch sử đơn hàng thành công!"
+                  data:
+                    $ref: '#/components/schemas/OrderHistoryResponse'
 
